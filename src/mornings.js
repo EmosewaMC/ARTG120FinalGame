@@ -23,8 +23,45 @@ class Intro extends Phaser.Scene {
 			align: "left"
 			});
 		this.input.once("pointerdown", () => {
-			this.scene.start("Game");
+			this.scene.start("Overworld");
 		});
+	}
+}
+
+class Overworld extends Phaser.Scene {
+	constructor() {
+		super("Overworld");
+	}
+
+	preload() {
+		this.load.image("Player", "assets/PlayerSprite.png");
+	}
+
+	create() {
+		this.maxVelocity = 300;
+		this.player = this.physics.add.sprite(100, 100, "Player").setScale(0.5).setCollideWorldBounds(true).setMaxVelocity(this.maxVelocity, this.maxVelocity);
+		// add listeners for w a s d keys
+		this.wKey = this.input.keyboard.addKey('W');
+		this.aKey = this.input.keyboard.addKey('A');
+		this.sKey = this.input.keyboard.addKey('S');
+		this.dKey = this.input.keyboard.addKey('D');
+	}
+
+	update(time, delta) {
+		let velocity = {x: 0, y: 0};
+		if (this.wKey.isDown) {
+			velocity.y -= this.maxVelocity;
+		}
+		if (this.aKey.isDown) {
+			velocity.x -= this.maxVelocity;
+		}
+		if (this.sKey.isDown) {
+			velocity.y += this.maxVelocity;
+		}
+		if (this.dKey.isDown) {
+			velocity.x += this.maxVelocity;
+		}
+		this.player.setVelocity(velocity.x, velocity.y);
 	}
 }
 
@@ -45,6 +82,6 @@ const game = new Phaser.Game({
 			}
 		}
 	},
-	scene: [Intro],
+	scene: [Intro, Overworld],
 	title: "Mornings",
 });
