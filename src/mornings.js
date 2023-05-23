@@ -3,15 +3,15 @@ class Intro extends Phaser.Scene {
 		super("Intro");
 	}
 
-	preload() { }
+	preload() {
+		this.load.image("Opening", "assets/Opening.png");
+	}
 
 	create() {
-		this.add.text(960, 540, "Loading game...", {
-			font: "bold 100px Arial",
-			fill: "#fff",
-			align: "center"
-		}).setOrigin(0.5);
-
+		this.add.image(960, 540, "Opening");
+		this.input.once("pointerdown", () => {
+			this.scene.start("Game");
+		});
 	}
 }
 
