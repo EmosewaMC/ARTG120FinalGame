@@ -15,8 +15,8 @@ class Intro extends Phaser.Scene {
 			stroke: "#000000",
 			strokeThickness: 5
 		});
-		this.add.text(550, this.cameras.main.centerY, "Click to start", {
-			font: "50px Arial",
+		this.add.text(425, this.cameras.main.centerY, "Click to start", {
+			font: "100px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5,
@@ -39,7 +39,7 @@ class Overworld extends Phaser.Scene {
 
 	create() {
 		this.maxVelocity = 300;
-		this.player = this.physics.add.sprite(100, 100, "Player").setScale(0.5).setCollideWorldBounds(true).setMaxVelocity(this.maxVelocity, this.maxVelocity);
+		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, "Player").setScale(0.5).setCollideWorldBounds(true).setMaxVelocity(this.maxVelocity, this.maxVelocity);
 		// add listeners for w a s d keys
 		this.wKey = this.input.keyboard.addKey('W');
 		this.aKey = this.input.keyboard.addKey('A');
@@ -62,6 +62,9 @@ class Overworld extends Phaser.Scene {
 			velocity.x += this.maxVelocity;
 		}
 		this.player.setVelocity(velocity.x, velocity.y);
+		if (velocity.x != 0 || velocity.y != 0) {
+			this.player.setAngle(Math.atan2(velocity.y, velocity.x) * 180 / Math.PI);
+		}
 	}
 }
 
