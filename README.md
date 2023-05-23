@@ -9,5 +9,5 @@
   - Any and all images go in here
 
 ## How to play the game
-- Step 1: Go [here]()
+- Step 1: Go [here](https://emosewamc.github.io/ARTG120FinalGame/)
 
