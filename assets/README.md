@@ -1,5 +1,7 @@
 ## Working with the repository
 
+- Download [Github Desktop](https://desktop.github.com/)
+
 ### Updating
 - Open Github Desktop and check that the repository in the top left is ARTG120FinalGame
 - Then click Fetch origin to check for updates.
