@@ -21,7 +21,7 @@ class Intro extends Phaser.Scene {
 			stroke: "#000000",
 			strokeThickness: 5,
 			align: "left"
-			});
+		});
 		this.input.once("pointerdown", () => {
 			this.scene.start("Overworld");
 		});
@@ -39,8 +39,22 @@ class Overworld extends Phaser.Scene {
 
 	create() {
 		this.maxVelocity = 300;
-		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, "Player").setScale(0.5).setCollideWorldBounds(true).setMaxVelocity(this.maxVelocity, this.maxVelocity);
-		// add listeners for w a s d keys
+		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, "Player")
+			.setScale(0.5)
+			.setCollideWorldBounds(true)
+			.setMaxVelocity(this.maxVelocity, this.maxVelocity);
+		this.interactable = this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "Player")
+			.setScale(0.5)
+			.setImmovable(true);
+
+		this.interactText = this.add.text(100, 100, "Press F to pay respects", {
+			font: "100px Arial",
+			fill: "#ffffff",
+			stroke: "#000000",
+			strokeThickness: 5,
+			align: "center"
+		}).setAlpha(0);
+
 		this.wKey = this.input.keyboard.addKey('W');
 		this.aKey = this.input.keyboard.addKey('A');
 		this.sKey = this.input.keyboard.addKey('S');
@@ -48,7 +62,13 @@ class Overworld extends Phaser.Scene {
 	}
 
 	update(time, delta) {
-		let velocity = {x: 0, y: 0};
+		// Check if the player is intersecting with the interactable
+		if (this.physics.overlap(this.player, this.interactable)) {
+			this.interactText.setAlpha(1);
+		} else {
+			this.interactText.setAlpha(0);
+		}
+		let velocity = { x: 0, y: 0 };
 		if (this.wKey.isDown) {
 			velocity.y -= this.maxVelocity;
 		}
