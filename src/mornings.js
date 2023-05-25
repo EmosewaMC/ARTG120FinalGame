@@ -55,10 +55,17 @@ class Overworld extends Phaser.Scene {
 			align: "center"
 		}).setAlpha(0);
 
+		this.physics.add.overlap(this.player, this.interactable, () => {
+			if (this.fKey.isDown) {
+				this.scene.start("BattleScene");
+			}
+		});
+
 		this.wKey = this.input.keyboard.addKey('W');
 		this.aKey = this.input.keyboard.addKey('A');
 		this.sKey = this.input.keyboard.addKey('S');
 		this.dKey = this.input.keyboard.addKey('D');
+		this.fKey = this.input.keyboard.addKey('F');
 	}
 
 	update(time, delta) {
@@ -88,6 +95,59 @@ class Overworld extends Phaser.Scene {
 	}
 }
 
+class BattleScene extends Phaser.Scene {
+	constructor() {
+		super("BattleScene");
+	}
+
+	preload() { }
+
+	create() {
+		this.add.text(100, 100, "Battle Scene", {
+			font: "100px Arial",
+			fill: "#ffffff",
+			stroke: "#000000",
+			strokeThickness: 5
+		});
+		this.topRightGoon = this.physics.add.sprite(this.cameras.main.centerX + 200, this.cameras.main.centerY - 200, "Player")
+			.setImmovable(true)
+			.setScale(2.5)
+			.setFlipX(true);
+
+		this.middleLeftGoon = this.physics.add.sprite(this.cameras.main.centerX - 400, this.cameras.main.centerY + 100, "Player")
+			.setImmovable(true)
+			.setScale(2.5);
+
+		this.playText = this.add.text(100, 800, "Pick a move", {
+			font: "100px Arial",
+			fill: "#ffffff",
+			stroke: "#000000",
+			strokeThickness: 5
+		});
+
+		this.punchText = this.add.text(100, 925, "Punch", {
+			font: "75px Arial",
+			fill: "#ffffff",
+			stroke: "#000000",
+			strokeThickness: 5
+		}).setInteractive().on("pointerdown", () => {
+			this.scene.start("Overworld");
+		});
+
+		this.runText = this.add.text(400, 925, "Run", {
+			font: "75px Arial",
+			fill: "#ffffff",
+			stroke: "#000000",
+			strokeThickness: 5
+		});
+
+		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 925, 1390, 300, 0x000000, 0)
+			.setStrokeStyle(5, 0xffffff, 1);
+	}
+
+	update(time, delta) { }
+}
+
 const game = new Phaser.Game({
 	scale: {
 		mode: Phaser.Scale.FIT,
@@ -105,6 +165,6 @@ const game = new Phaser.Game({
 			}
 		}
 	},
-	scene: [Intro, Overworld],
+	scene: [Intro, Overworld, BattleScene],
 	title: "Mornings",
 });
