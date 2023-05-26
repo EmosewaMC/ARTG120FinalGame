@@ -229,10 +229,26 @@ class BattleScene extends Phaser.Scene {
 			stroke: "#000000",
 			strokeThickness: 5
 		}).setInteractive().on("pointerdown", () => {
-			this.scene.start("Overworld", {
-				energy: this.playerEnergy - 10,
-				time: this.time
-			});
+			if (this.playerEnergy >= 10) {
+				this.scene.start("Overworld", {
+					energy: this.playerEnergy - 10,
+					time: this.time
+				});
+			} else {
+				this.playText.setText("Not enough energy");
+				// Add a timer to change the text back after 1 second
+				this.tweens.add({
+					targets: this.playText,
+					alpha: 1,
+					duration: 1000,
+					ease: "Linear",
+					repeat: 0,
+					yoyo: false,
+					onComplete: () => {
+						this.playText.setText("Pick a move");
+					}
+				});
+			}
 		});
 
 		this.runText = this.add.text(400, 925, "Run", {
