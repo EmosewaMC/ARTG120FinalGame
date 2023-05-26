@@ -1,5 +1,19 @@
 const maxEnergy = 100;
 
+function timeToText(time) {
+	time = Math.floor(time);
+	time = time % (24 * 6000);
+	let hours = Math.floor(time / 6000) % 13;
+	let minutes = Math.floor((time % 6000) / 100);
+	if (minutes < 10) {
+		minutes = "0" + minutes;
+	}
+	if (Math.floor(time / 6000) < 10) {
+		hours = "0" + hours;
+	}
+	return hours + ":" + minutes + (Math.floor(time / 6000) < 12 ? "am" : "pm");
+}
+
 function registerInputHandlers(scene) {
 	scene.wKey = scene.input.keyboard.addKey('W');
 	scene.aKey = scene.input.keyboard.addKey('A');
@@ -9,7 +23,7 @@ function registerInputHandlers(scene) {
 }
 
 function getLeftAlign(energy) {
-	return 300 - (maxEnergy - energy) * 1.5;
+	return maxEnergy * 3 - (maxEnergy - energy) * 1.5;
 }
 
 class Intro extends Phaser.Scene {
@@ -38,7 +52,8 @@ class Intro extends Phaser.Scene {
 		});
 		this.input.once("pointerdown", () => {
 			this.scene.start("Overworld", {
-				energy: maxEnergy
+				energy: maxEnergy,
+				time: 8 * 6000
 			});
 		});
 	}
@@ -51,6 +66,7 @@ class Overworld extends Phaser.Scene {
 
 	init(data) {
 		this.playerEnergy = data.energy;
+		this.time = data.time;
 	}
 
 	preload() {
@@ -77,7 +93,7 @@ class Overworld extends Phaser.Scene {
 		// Fill a rectangle in the top left corner with a white border and green fill to represent the player's energy
 		
 
-		this.interactText = this.add.text(100, 100, "Press F to pay respects", {
+		this.interactText = this.add.text(100, 900, "Press F to pay respects", {
 			font: "100px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
@@ -88,16 +104,28 @@ class Overworld extends Phaser.Scene {
 		this.physics.add.overlap(this.player, this.interactables, () => {
 			if (this.fKey.isDown) {
 				this.scene.start("BattleScene", {
-					energy: this.playerEnergy
+					energy: this.playerEnergy,
+					time: this.time
 				});
 			}
 		});
 
 		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
-		this.outline = this.add.rectangle(300, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
+		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
+		this.timeText = this.add.text(125, 175, "Time: 00:" + this.time, {
+			font: "50px Arial",
+			fill: "#ffffff",
+			stroke: "#000000",
+			strokeThickness: 5,
+			align: "left"
+		});
+		this.physics.add.collider(this.player, this.physics.add.existing(this.outline, true));
+		this.physics.add.collider(this.player, this.physics.add.existing(this.timeText, true));
 	}
 
 	update(time, delta) {
+		this.time += delta;
+		this.timeText.setText("Time: " + timeToText(this.time));
 		// Check if the player is intersecting with the interactables and if they are display a message to interact
 		if (this.physics.overlap(this.player, this.interactables)) {
 			this.interactText.setAlpha(1);
@@ -131,6 +159,7 @@ class BattleScene extends Phaser.Scene {
 
 	init(data) {
 		this.playerEnergy = data.energy;
+		this.time = data.time;
 	}
 
 	preload() { }
@@ -165,7 +194,8 @@ class BattleScene extends Phaser.Scene {
 			strokeThickness: 5
 		}).setInteractive().on("pointerdown", () => {
 			this.scene.start("Overworld", {
-				energy: this.playerEnergy - 10
+				energy: this.playerEnergy - 10,
+				time: this.time
 			});
 		});
 
@@ -176,7 +206,8 @@ class BattleScene extends Phaser.Scene {
 			strokeThickness: 5
 		}).setInteractive().on("pointerdown", () => {
 			this.scene.start("Overworld", {
-				energy: this.playerEnergy
+				energy: this.playerEnergy,
+				time: this.time
 			});
 		});
 
