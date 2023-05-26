@@ -68,6 +68,7 @@ class Overworld extends Phaser.Scene {
 		this.playerEnergy = data.energy;
 		this.time = data.time;
 		this.textActive = false;
+		this.canReleaseText = true;
 		this.activeText = undefined;
 	}
 
@@ -136,16 +137,23 @@ class Overworld extends Phaser.Scene {
 			this.interactText.setAlpha(0);
 		}
 		if (this.physics.overlap(this.player, this.messengers)) {
-			if (!this.textActive) {
+			if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
+				this.canReleaseText = false;
 				this.textActive = true;
 				this.playerEnergy -= 1;
-				this.activeText = this.add.text(this.player.x, this.player.y, "-1", {
+				this.activeText = this.add.text(this.player.x, this.player.y, "You have interacted", {
 					font: "50px Arial",
 					fill: "#ff0000",
 					stroke: "#000000",
 					strokeThickness: 5,
 					align: "center"
 				});
+			} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
+				this.textActive = false;
+				this.canReleaseText = false;
+				if (this.activeText != undefined) {
+					this.activeText.destroy();
+				}
 			}
 		} else {
 			this.textActive = false;
@@ -169,6 +177,9 @@ class Overworld extends Phaser.Scene {
 		}
 		if (this.dKey.isDown) {
 			velocity.x += this.maxVelocity;
+		}
+		if (!this.fKey.isDown) {
+			this.canReleaseText = true;
 		}
 		this.player.setVelocity(velocity.x, velocity.y);
 		if (velocity.x != 0 || velocity.y != 0) {
