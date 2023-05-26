@@ -1,10 +1,9 @@
 const maxEnergy = 100;
 
 function timeToText(time) {
-	time = Math.floor(time % (24 * 6000 * 1000)); // Normalize to 24 hours
-	time = Math.floor(time / 1000); // Convert to seconds
-	let hours = Math.floor(time / 60 / 100) % 13;
-	let minutes = Math.floor(time % 6000);
+	time = Math.floor(time % (24 * 60)); // Normalize to 24 hours
+	let hours = (Math.floor(time / 60) % 12) + 1;
+	let minutes = Math.floor(time % 60);
 	// Make sure there is zero apdding
 	if (hours < 10) {
 		hours = "0" + hours;
@@ -12,7 +11,7 @@ function timeToText(time) {
 	if (minutes < 10) {
 		minutes = "0" + minutes;
 	}
-	return hours + ":" + minutes + (Math.floor(time / 60 / 100) < 12 ? "am" : "pm");
+	return hours + ":" + minutes + (Math.floor(time / 60) < 11 ? "am" : "pm");
 }
 
 function registerInputHandlers(scene) {
@@ -54,7 +53,7 @@ class Intro extends Phaser.Scene {
 		this.input.once("pointerdown", () => {
 			this.scene.start("Overworld", {
 				energy: maxEnergy,
-				time: 8 * 6000 * 1000
+				time: 10 * 60 + 50
 			});
 		});
 	}
@@ -68,6 +67,8 @@ class Overworld extends Phaser.Scene {
 	init(data) {
 		this.playerEnergy = data.energy;
 		this.time = data.time;
+		this.textActive = false;
+		this.activeText = undefined;
 	}
 
 	preload() {
@@ -85,14 +86,15 @@ class Overworld extends Phaser.Scene {
 		this.interactables.push(this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "Player")
 			.setScale(0.5)
 			.setImmovable(true));
+		this.messengers = [];
 		// push 5 more at random positions
 		for (let i = 0; i < 5; i++) {
-			this.interactables.push(this.physics.add.sprite(Math.random() * this.cameras.main.width, Math.random() * this.cameras.main.height, "Player")
+			this.messengers.push(this.physics.add.sprite(Math.random() * this.cameras.main.width, Math.random() * this.cameras.main.height, "Player")
 				.setScale(0.5)
 				.setImmovable(true));
 		}
 		// Fill a rectangle in the top left corner with a white border and green fill to represent the player's energy
-		
+
 
 		this.interactText = this.add.text(100, 900, "Press F to pay respects", {
 			font: "100px Arial",
@@ -113,7 +115,7 @@ class Overworld extends Phaser.Scene {
 
 		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
 		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
-		this.timeText = this.add.text(125, 175, "Time:" + this.time, {
+		this.timeText = this.add.text(125, 175, "Time:         " + this.time, {
 			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
@@ -125,13 +127,35 @@ class Overworld extends Phaser.Scene {
 	}
 
 	update(time, delta) {
-		this.time += delta;
+		this.time += delta / 1000;
 		this.timeText.setText("Time: " + timeToText(this.time));
 		// Check if the player is intersecting with the interactables and if they are display a message to interact
 		if (this.physics.overlap(this.player, this.interactables)) {
 			this.interactText.setAlpha(1);
 		} else {
 			this.interactText.setAlpha(0);
+		}
+		if (this.physics.overlap(this.player, this.messengers)) {
+			if (!this.textActive) {
+				this.textActive = true;
+				this.playerEnergy -= 1;
+				this.activeText = this.add.text(this.player.x, this.player.y, "-1", {
+					font: "50px Arial",
+					fill: "#ff0000",
+					stroke: "#000000",
+					strokeThickness: 5,
+					align: "center"
+				});
+			}
+		} else {
+			this.textActive = false;
+			if (this.activeText != undefined) {
+				this.activeText.destroy();
+			}
+		}
+		if (this.activeText != undefined) {
+			this.activeText.x = this.player.x;
+			this.activeText.y = this.player.y;
 		}
 		let velocity = { x: 0, y: 0 };
 		if (this.wKey.isDown) {
