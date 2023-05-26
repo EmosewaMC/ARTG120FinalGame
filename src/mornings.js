@@ -201,6 +201,7 @@ class BattleScene extends Phaser.Scene {
 	preload() { }
 
 	create() {
+		this.showingNoEnergy = false;
 		this.add.text(100, 100, "Battle Scene", {
 			font: "100px Arial",
 			fill: "#ffffff",
@@ -235,19 +236,23 @@ class BattleScene extends Phaser.Scene {
 					time: this.time
 				});
 			} else {
-				this.playText.setText("Not enough energy");
-				// Add a timer to change the text back after 1 second
-				this.tweens.add({
-					targets: this.playText,
-					alpha: 1,
-					duration: 1000,
-					ease: "Linear",
-					repeat: 0,
-					yoyo: false,
-					onComplete: () => {
-						this.playText.setText("Pick a move");
-					}
-				});
+				if (!this.showingNoEnergy) {
+					this.showingNoEnergy = true;
+					this.playText.setText("Not enough energy");
+					// Add a timer to change the text back after 1 second
+					this.tweens.add({
+						targets: this.playText,
+						alpha: 1,
+						duration: 1000,
+						ease: "Linear",
+						repeat: 0,
+						yoyo: false,
+						onComplete: () => {
+							this.playText.setText("Pick a move");
+							this.showingNoEnergy = false;
+						}
+					});
+				}
 			}
 		});
 
