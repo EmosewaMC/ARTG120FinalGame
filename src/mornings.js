@@ -1,17 +1,18 @@
 const maxEnergy = 100;
 
 function timeToText(time) {
-	time = Math.floor(time);
-	time = time % (24 * 6000);
-	let hours = Math.floor(time / 6000) % 13;
-	let minutes = Math.floor((time % 6000) / 100);
+	time = Math.floor(time % (24 * 6000 * 1000)); // Normalize to 24 hours
+	time = Math.floor(time / 1000); // Convert to seconds
+	let hours = Math.floor(time / 60 / 100) % 13;
+	let minutes = Math.floor(time % 6000);
+	// Make sure there is zero apdding
+	if (hours < 10) {
+		hours = "0" + hours;
+	}
 	if (minutes < 10) {
 		minutes = "0" + minutes;
 	}
-	if (Math.floor(time / 6000) < 10) {
-		hours = "0" + hours;
-	}
-	return hours + ":" + minutes + (Math.floor(time / 6000) < 12 ? "am" : "pm");
+	return hours + ":" + minutes + (Math.floor(time / 60 / 100) < 12 ? "am" : "pm");
 }
 
 function registerInputHandlers(scene) {
@@ -53,7 +54,7 @@ class Intro extends Phaser.Scene {
 		this.input.once("pointerdown", () => {
 			this.scene.start("Overworld", {
 				energy: maxEnergy,
-				time: 8 * 6000
+				time: 8 * 6000 * 1000
 			});
 		});
 	}
@@ -112,7 +113,7 @@ class Overworld extends Phaser.Scene {
 
 		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
 		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
-		this.timeText = this.add.text(125, 175, "Time: 00:" + this.time, {
+		this.timeText = this.add.text(125, 175, "Time:" + this.time, {
 			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
