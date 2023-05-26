@@ -1,3 +1,17 @@
+const maxEnergy = 100;
+
+function registerInputHandlers(scene) {
+	scene.wKey = scene.input.keyboard.addKey('W');
+	scene.aKey = scene.input.keyboard.addKey('A');
+	scene.sKey = scene.input.keyboard.addKey('S');
+	scene.dKey = scene.input.keyboard.addKey('D');
+	scene.fKey = scene.input.keyboard.addKey('F');
+}
+
+function getLeftAlign(energy) {
+	return 300 - (maxEnergy - energy) * 1.5;
+}
+
 class Intro extends Phaser.Scene {
 	constructor() {
 		super("Intro");
@@ -23,7 +37,9 @@ class Intro extends Phaser.Scene {
 			align: "left"
 		});
 		this.input.once("pointerdown", () => {
-			this.scene.start("Overworld");
+			this.scene.start("Overworld", {
+				energy: maxEnergy
+			});
 		});
 	}
 }
@@ -33,19 +49,33 @@ class Overworld extends Phaser.Scene {
 		super("Overworld");
 	}
 
+	init(data) {
+		this.playerEnergy = data.energy;
+	}
+
 	preload() {
 		this.load.image("Player", "assets/PlayerSprite.png");
 	}
 
 	create() {
+		registerInputHandlers(this);
 		this.maxVelocity = 300;
 		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, "Player")
 			.setScale(0.5)
 			.setCollideWorldBounds(true)
 			.setMaxVelocity(this.maxVelocity, this.maxVelocity);
-		this.interactable = this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "Player")
+		this.interactables = [];
+		this.interactables.push(this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "Player")
 			.setScale(0.5)
-			.setImmovable(true);
+			.setImmovable(true));
+		// push 5 more at random positions
+		for (let i = 0; i < 5; i++) {
+			this.interactables.push(this.physics.add.sprite(Math.random() * this.cameras.main.width, Math.random() * this.cameras.main.height, "Player")
+				.setScale(0.5)
+				.setImmovable(true));
+		}
+		// Fill a rectangle in the top left corner with a white border and green fill to represent the player's energy
+		
 
 		this.interactText = this.add.text(100, 100, "Press F to pay respects", {
 			font: "100px Arial",
@@ -55,22 +85,21 @@ class Overworld extends Phaser.Scene {
 			align: "center"
 		}).setAlpha(0);
 
-		this.physics.add.overlap(this.player, this.interactable, () => {
+		this.physics.add.overlap(this.player, this.interactables, () => {
 			if (this.fKey.isDown) {
-				this.scene.start("BattleScene");
+				this.scene.start("BattleScene", {
+					energy: this.playerEnergy
+				});
 			}
 		});
 
-		this.wKey = this.input.keyboard.addKey('W');
-		this.aKey = this.input.keyboard.addKey('A');
-		this.sKey = this.input.keyboard.addKey('S');
-		this.dKey = this.input.keyboard.addKey('D');
-		this.fKey = this.input.keyboard.addKey('F');
+		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
+		this.outline = this.add.rectangle(300, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
 	}
 
 	update(time, delta) {
-		// Check if the player is intersecting with the interactable
-		if (this.physics.overlap(this.player, this.interactable)) {
+		// Check if the player is intersecting with the interactables and if they are display a message to interact
+		if (this.physics.overlap(this.player, this.interactables)) {
 			this.interactText.setAlpha(1);
 		} else {
 			this.interactText.setAlpha(0);
@@ -98,6 +127,10 @@ class Overworld extends Phaser.Scene {
 class BattleScene extends Phaser.Scene {
 	constructor() {
 		super("BattleScene");
+	}
+
+	init(data) {
+		this.playerEnergy = data.energy;
 	}
 
 	preload() { }
@@ -131,7 +164,9 @@ class BattleScene extends Phaser.Scene {
 			stroke: "#000000",
 			strokeThickness: 5
 		}).setInteractive().on("pointerdown", () => {
-			this.scene.start("Overworld");
+			this.scene.start("Overworld", {
+				energy: this.playerEnergy - 10
+			});
 		});
 
 		this.runText = this.add.text(400, 925, "Run", {
@@ -139,6 +174,10 @@ class BattleScene extends Phaser.Scene {
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5
+		}).setInteractive().on("pointerdown", () => {
+			this.scene.start("Overworld", {
+				energy: this.playerEnergy
+			});
 		});
 
 		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 925, 1390, 300, 0x000000, 0)
