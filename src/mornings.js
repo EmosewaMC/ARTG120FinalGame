@@ -116,6 +116,24 @@ class Overworld extends SceneLoader {
 		this.enterKey = this.input.keyboard.addKey('ENTER');
 	}
 
+	rerenderEnergy() {
+		if (this.energyBox != undefined) {
+			this.energyBox.destroy();
+			this.energyBox = undefined;
+		}
+		if (this.outline != undefined) {
+			this.outline.destroy();
+			this.outline = undefined;
+		}
+		if (this.playerEnergy > maxEnergy) this.playerEnergy = maxEnergy;
+		if (this.playerEnergy < 0) {
+			this.playerEnergy = 0;
+			this.scene.start("Intro");
+		}
+		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
+		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
+	}
+
 	runTime(time, delta) {
 		this.time += delta / 1000;
 		this.timeText.setText("Time: " + timeToText(this.time));
@@ -143,6 +161,7 @@ class Overworld extends SceneLoader {
 			this.scene.start("Intro");
 		}
 	}
+
 	runInteractables(time, delta) {
 		for (let [objName, obj] of Object.entries(this.interactables)) {
 			if (this.physics.overlap(this.player, obj)) {
@@ -224,6 +243,8 @@ class Overworld extends SceneLoader {
 					// add a one off callback that when a key is pressed it will destroy the text
 					this.input.keyboard.once('keydown', function (event) {
 						if (this.scene.activeText != undefined) {
+							this.scene.playerEnergy -= this.scene.interactedObject.interactions[Math.round(Seed * 2) % 2].cost.energy;
+							this.scene.rerenderEnergy();
 							this.scene.activeText.destroy();
 							this.scene.textActive = false;
 							this.scene.activeText = undefined;
@@ -350,14 +371,14 @@ class Overworld extends SceneLoader {
 			0: {
 				description: "You have no new messages, and your friend posted cat pics.",
 				cost: {
-					energy: 0,
+					energy: -MediumEnergy,
 					time: 0
 				}
 			},
 			1: {
 				description: "You have 173 unread emails and 3 new texts from your\nparents. Instead of checking any of these,\nyou just scroll through social media.",
 				cost: {
-					energy: 0,
+					energy: LowEnergy,
 					time: 0
 				}
 			}
@@ -409,6 +430,7 @@ class Overworld extends SceneLoader {
 		});
 		this.physics.add.collider(this.player, this.physics.add.existing(this.outline, true));
 		this.physics.add.collider(this.player, this.physics.add.existing(this.timeText, true));
+		this.rerenderEnergy();
 	}
 
 	update(time, delta) {
