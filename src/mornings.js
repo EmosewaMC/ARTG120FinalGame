@@ -62,14 +62,6 @@ function timeToText(time) {
 	return hours + ":" + minutes + (Math.floor(time / 60) < 11 ? "am" : "pm");
 }
 
-function registerInputHandlers(scene) {
-	scene.wKey = scene.input.keyboard.addKey('W');
-	scene.aKey = scene.input.keyboard.addKey('A');
-	scene.sKey = scene.input.keyboard.addKey('S');
-	scene.dKey = scene.input.keyboard.addKey('D');
-	scene.fKey = scene.input.keyboard.addKey('F');
-}
-
 function getLeftAlign(energy) {
 	return maxEnergy * 3 - (maxEnergy - energy) * 1.5;
 }
@@ -87,7 +79,7 @@ class Intro extends SceneLoader {
 			stroke: "#000000",
 			strokeThickness: 5
 		});
-		this.add.text(425, this.cameras.main.centerY, "Click to start", {
+		this.add.text(225, this.cameras.main.centerY, "Press anything to start", {
 			font: "100px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
@@ -100,6 +92,13 @@ class Intro extends SceneLoader {
 				time: hoursToMinutes(StartTime)
 			});
 		});
+		// if any key is pressed, start the game
+		this.input.keyboard.on("keydown", () => {
+			this.scene.start("Overworld", {
+				energy: maxEnergy,
+				time: hoursToMinutes(StartTime)
+			});
+		});
 	}
 }
 
@@ -107,6 +106,16 @@ class Overworld extends SceneLoader {
 	constructor() {
 		super("Overworld");
 	}
+
+	registerInputHandlers() {
+		this.wKey = this.input.keyboard.addKey('W');
+		this.aKey = this.input.keyboard.addKey('A');
+		this.sKey = this.input.keyboard.addKey('S');
+		this.dKey = this.input.keyboard.addKey('D');
+		this.fKey = this.input.keyboard.addKey('F');
+		this.enterKey = this.input.keyboard.addKey('ENTER');
+	}
+
 	runTime(time, delta) {
 		this.time += delta / 1000;
 		this.timeText.setText("Time: " + timeToText(this.time));
@@ -141,6 +150,7 @@ class Overworld extends SceneLoader {
 					this.canReleaseText = false;
 					this.textActive = true;
 					this.playerEnergy -= 1;
+					this.interactedObject = obj;
 					this.activeText = this.add.text(40, 900, obj.interactText, {
 						font: "50px Arial",
 						fill: "#FFFFFF",
@@ -148,7 +158,24 @@ class Overworld extends SceneLoader {
 						strokeThickness: 5,
 						align: "center"
 					});
+					// We only plan to have 2 actions to take
+					this.leftAction = this.add.text(140, 1000, obj.interactActions.leftAction, {
+						font: "50px Arial",
+						fill: "#FFFFFF",
+						stroke: "#000000",
+						strokeThickness: 5,
+						align: "center"
+					});
+					this.rightAction = this.add.text(740, 1000, obj.interactActions.rightAction, {
+						font: "50px Arial",
+						fill: "#FFFFFF",
+						stroke: "#000000",
+						strokeThickness: 5,
+						align: "center"
+					}).setAlpha(0.5);
 					this.moveBox.setAlpha(1);
+					this.disablePlayerMovement = true;
+					this.usedTextItem = 1;
 				} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
 					this.textActive = false;
 					this.canReleaseText = false;
@@ -169,6 +196,61 @@ class Overworld extends SceneLoader {
 	}
 
 	runInput(time, delta) {
+		if (this.disablePlayerMovement) {
+			if (this.player.body.velocity.y != 0 || this.player.body.velocity.x != 0) {
+				this.player.setVelocity(0, 0);
+				this.player.setTexture(this.idleAsset);
+			}
+			if ((this.aKey.isDown || this.dKey.isDown) && this.releasedKey) {
+				this.releasedKey = false;
+				this.usedTextItem++;
+				if (this.usedTextItem % 2 == 0) {
+					this.leftAction.setAlpha(0.5);
+					this.rightAction.setAlpha(1);
+				} else {
+					this.leftAction.setAlpha(1);
+					this.rightAction.setAlpha(0.5);
+				}
+			} else if (!(this.aKey.isDown || this.dKey.isDown)) {
+				this.releasedKey = true;
+			}
+			if (this.enterKey.isDown && this.releasedKey) {
+				let selectedOption = this.usedTextItem % 2;
+				if (selectedOption == 0) {
+					this.activeText.setText(this.interactedObject.interactions[Math.round(Seed * 2) % 2].description);
+					this.activeText.setPosition(40, 885);
+					this.leftAction.destroy();
+					this.rightAction.destroy();
+					// add a one off callback that when a key is pressed it will destroy the text
+					this.input.keyboard.once('keydown', function (event) {
+						if (this.scene.activeText != undefined) {
+							this.scene.activeText.destroy();
+							this.scene.textActive = false;
+							this.scene.activeText = undefined;
+						}
+						this.scene.disablePlayerMovement = false;
+						this.scene.canReleaseText = true;
+					});
+				} else {
+					if (this.activeText != undefined) {
+						this.activeText.destroy();
+						this.textActive = false;
+						this.activeText = undefined;
+					}
+					if (this.leftAction != undefined) {
+						this.leftAction.destroy();
+						this.leftAction = undefined;
+					}
+					if (this.rightAction != undefined) {
+						this.rightAction.destroy();
+						this.rightAction = undefined;
+					}
+					this.disablePlayerMovement = false;
+					this.canReleaseText = true;
+				}
+			}
+			return;
+		}
 		let velocity = { x: 0, y: 0 };
 		let movingAsset = "";
 		let flip = false;
@@ -236,6 +318,10 @@ class Overworld extends SceneLoader {
 		this.framesWithPreviousAsset = 0;
 		this.idleAsset = "FrontIdle";
 		this.movingFrames = 0;
+		this.disablePlayerMovement = false;
+		this.leftAction = undefined;
+		this.rightAction = undefined;
+		this.releasedKey = false;
 	}
 
 	addPhysicsWall(x, y) {
@@ -260,16 +346,28 @@ class Overworld extends SceneLoader {
 			Phone: (this.physics.add.sprite(500, 340, "FrontIdle").setScale(0.5))
 		};
 		this.interactables.Phone.interactText = "Your notifications are always silenced.";
-		this.interactables.Phone.interactions = [
-			"You have no new messages, and your friend posted cat pics.",
-			"You have 173 unread emails and 3 new texts from your parents. Instead of checking any of these, you just scroll through social media."
-		];
-		this.interactables.Phone.interactActions = [
-			"Check phone",
-			"Put the phone down"
-		];
+		this.interactables.Phone.interactions = {
+			0: {
+				description: "You have no new messages, and your friend posted cat pics.",
+				cost: {
+					energy: 0,
+					time: 0
+				}
+			},
+			1: {
+				description: "You have 173 unread emails and 3 new texts from your\nparents. Instead of checking any of these,\nyou just scroll through social media.",
+				cost: {
+					energy: 0,
+					time: 0
+				}
+			}
+		};
+		this.interactables.Phone.interactActions = {
+			leftAction: "Check phone",
+			rightAction: "Put the phone down"
+		};
 
-		registerInputHandlers(this);
+		this.registerInputHandlers();
 		this.maxVelocity = 300;
 		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, this.idleAsset)
 			.setScale(2.25)
