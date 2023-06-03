@@ -394,6 +394,8 @@ class Overworld extends SceneLoader {
 		this.interactables = {
 			Phone: (this.physics.add.sprite(500, 340, "FrontIdle").setScale(0.5))
 		};
+		// lets put medicine on the dresser
+		// we'll put then water cups on the shelf to the right of the nightstand
 		this.initializePhone(this.interactables.Phone);
 
 		this.registerInputHandlers();
