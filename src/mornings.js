@@ -1,5 +1,6 @@
 const maxEnergy = 100;
-const StartTime = 7; // 8am
+const StartTime = 11; // 8am
+const EndTime = 12; // 1pm
 
 class SceneLoader extends Phaser.Scene {
 	preloadImage(image) {
@@ -98,42 +99,53 @@ class Overworld extends SceneLoader {
 		this.time += delta / 1000;
 		this.timeText.setText("Time: " + timeToText(this.time));
 		// Check if the player is intersecting with the interactables and if they are display a message to interact
-		if (this.physics.overlap(this.player, this.interactables)) {
-			this.interactText.setAlpha(1);
-		} else {
-			this.interactText.setAlpha(0);
+		// log the size of interactables
+
+		for (let [objName, obj] of Object.entries(this.interactables)) {
+			if (this.physics.overlap(this.player, obj)) {
+				this.interactText.setAlpha(1);
+			} else {
+				this.interactText.setAlpha(0);
+			}
+		}
+		if (this.time >= hoursToMinutes(EndTime)) {
+			console.log("You have lost");
+			this.scene.start("Intro");
 		}
 	}
 	runInteractables(time, delta) {
-		if (this.physics.overlap(this.player, this.interactables)) {
-			if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
-				this.canReleaseText = false;
-				this.textActive = true;
-				this.playerEnergy -= 1;
-				this.activeText = this.add.text(this.player.x, this.player.y, "You have interacted", {
-					font: "50px Arial",
-					fill: "#ff0000",
-					stroke: "#000000",
-					strokeThickness: 5,
-					align: "center"
-				});
-			} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
+		for (let [objName, obj] of Object.entries(this.interactables)) {
+			if (this.physics.overlap(this.player, obj)) {
+				if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
+					this.canReleaseText = false;
+					this.textActive = true;
+					this.playerEnergy -= 1;
+					this.activeText = this.add.text(this.player.x, this.player.y, obj.interactText, {
+						font: "50px Arial",
+						fill: "#ff0000",
+						stroke: "#000000",
+						strokeThickness: 5,
+						align: "center"
+					});
+				} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
+					this.textActive = false;
+					this.canReleaseText = false;
+					if (this.activeText != undefined) {
+						this.activeText.destroy();
+					}
+				}
+			} else {
 				this.textActive = false;
-				this.canReleaseText = false;
 				if (this.activeText != undefined) {
 					this.activeText.destroy();
 				}
 			}
-		} else {
-			this.textActive = false;
 			if (this.activeText != undefined) {
-				this.activeText.destroy();
+				this.activeText.x = this.player.x;
+				this.activeText.y = this.player.y;
 			}
 		}
-		if (this.activeText != undefined) {
-			this.activeText.x = this.player.x;
-			this.activeText.y = this.player.y;
-		}
+
 	}
 
 	runInput(time, delta) {
@@ -208,6 +220,12 @@ class Overworld extends SceneLoader {
 
 	create() {
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
+
+		this.interactables = {
+			Phone: (this.physics.add.sprite(500, 340, "FrontIdle").setScale(0.5))
+		};
+		this.interactables.Phone.interactText = "I am a phone";
+		console.log(this.interactables);
 		registerInputHandlers(this);
 		this.maxVelocity = 300;
 		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, this.idleAsset)
@@ -215,6 +233,7 @@ class Overworld extends SceneLoader {
 			.setCollideWorldBounds(true)
 			.setMaxVelocity(this.maxVelocity, this.maxVelocity);
 		this.player.body.setSize(50, 95);
+
 		// YAY CRAPPY PHYSICS BOUNDS
 		this.ceiling = this.physics.add.sprite(900, 100, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
 		this.nightstand = this.physics.add.sprite(-370, 225, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
@@ -222,9 +241,11 @@ class Overworld extends SceneLoader {
 		this.dresser = this.physics.add.sprite(1850, 910, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
 		this.desk = this.physics.add.sprite(-390, 895, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
 		this.floor = this.physics.add.sprite(900, 1125, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.rightWallUpper = this.physics.add.sprite(2250, 285, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
 		this.rightWallLower = this.physics.add.sprite(2250, 785, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.rightWallUpper = this.physics.add.sprite(2250, 485, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.lamp = this.physics.add.sprite(2100, 160, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
 		this.physics.add.collider(this.player, this.rightWallLower);
+		this.physics.add.collider(this.player, this.lamp);
 		this.physics.add.collider(this.player, this.rightWallUpper);
 		this.physics.add.collider(this.player, this.floor);
 		this.physics.add.collider(this.player, this.desk);
@@ -234,20 +255,6 @@ class Overworld extends SceneLoader {
 		this.physics.add.collider(this.player, this.ceiling);
 		// Move the hitbox down a touch
 		this.player.body.setOffset(20, 14);
-		this.interactables = [];
-		this.interactables.push(this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "FrontIdle")
-			.setScale(0.75)
-			.setImmovable(true));
-		this.interactables = [];
-		// push 5 more at random positions
-		for (let i = 0; i < 5; i++) {
-			this.interactables.push(this.physics.add.sprite(Math.random() * this.cameras.main.width, Math.random() * this.cameras.main.height, "FrontIdle")
-				.setScale(0.5)
-				.setImmovable(true));
-		}
-		// Fill a rectangle in the top left corner with a white border and green fill to represent the player's energy
-
-
 		this.interactText = this.add.text(100, 900, "Press F to pay respects", {
 			font: "100px Arial",
 			fill: "#ffffff",
@@ -256,14 +263,14 @@ class Overworld extends SceneLoader {
 			align: "center"
 		}).setAlpha(0);
 
-		this.physics.add.overlap(this.player, this.interactables, () => {
-			if (this.fKey.isDown) {
-				this.scene.start("BattleScene", {
-					energy: this.playerEnergy,
-					time: this.time
-				});
-			}
-		});
+		// this.physics.add.overlap(this.player, this.interactables, () => {
+		// 	if (this.fKey.isDown) {
+		// 		this.scene.start("BattleScene", {
+		// 			energy: this.playerEnergy,
+		// 			time: this.time
+		// 		});
+		// 	}
+		// });
 
 		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
 		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
