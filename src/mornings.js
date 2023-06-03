@@ -235,6 +235,17 @@ class Overworld extends SceneLoader {
 		this.movingFrames = 0;
 	}
 
+	addPhysicsWall(x, y) {
+		let newPhysBounds = this.physics.add.sprite(x, y, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		// add a callback for when the object is clicked to output its position
+		newPhysBounds.setInteractive().on('pointerdown', () => {
+			console.log(newPhysBounds.x, newPhysBounds.y);
+		});
+		this.physics.add.collider(
+			newPhysBounds, this.player
+		);
+	}
+
 	create() {
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 
@@ -250,7 +261,7 @@ class Overworld extends SceneLoader {
 			"Check phone",
 			"Put the phone down"
 		];
-		console.log(this.interactables);
+
 		registerInputHandlers(this);
 		this.maxVelocity = 300;
 		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, this.idleAsset)
@@ -260,24 +271,16 @@ class Overworld extends SceneLoader {
 		this.player.body.setSize(50, 95);
 
 		// YAY CRAPPY PHYSICS BOUNDS
-		this.ceiling = this.physics.add.sprite(900, 100, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.nightstand = this.physics.add.sprite(-370, 225, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.bed = this.physics.add.sprite(-590, 450, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.dresser = this.physics.add.sprite(1850, 910, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.desk = this.physics.add.sprite(-390, 895, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.floor = this.physics.add.sprite(900, 1125, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.rightWallUpper = this.physics.add.sprite(2250, 285, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.rightWallLower = this.physics.add.sprite(2250, 785, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.lamp = this.physics.add.sprite(2100, 160, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
-		this.physics.add.collider(this.player, this.rightWallLower);
-		this.physics.add.collider(this.player, this.lamp);
-		this.physics.add.collider(this.player, this.rightWallUpper);
-		this.physics.add.collider(this.player, this.floor);
-		this.physics.add.collider(this.player, this.desk);
-		this.physics.add.collider(this.player, this.bed);
-		this.physics.add.collider(this.player, this.dresser);
-		this.physics.add.collider(this.player, this.nightstand);
-		this.physics.add.collider(this.player, this.ceiling);
+		this.addPhysicsWall(900, 100);
+		this.addPhysicsWall(-370, 225);
+		this.addPhysicsWall(-590, 450);
+		this.addPhysicsWall(1850, 910);
+		this.addPhysicsWall(-536, 895);
+		this.addPhysicsWall(-400, 975);
+		this.addPhysicsWall(900, 1125);
+		this.addPhysicsWall(2250, 310);
+		this.addPhysicsWall(2250, 785);
+		this.addPhysicsWall(2100, 160);
 		// Move the hitbox down a touch
 		this.player.body.setOffset(20, 14);
 		this.interactText = this.add.text(100, 900, "Press F to pay respects", {
@@ -287,15 +290,6 @@ class Overworld extends SceneLoader {
 			strokeThickness: 5,
 			align: "center"
 		}).setAlpha(0);
-
-		// this.physics.add.overlap(this.player, this.interactables, () => {
-		// 	if (this.fKey.isDown) {
-		// 		this.scene.start("BattleScene", {
-		// 			energy: this.playerEnergy,
-		// 			time: this.time
-		// 		});
-		// 	}
-		// });
 
 		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
 		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
@@ -308,6 +302,9 @@ class Overworld extends SceneLoader {
 		});
 		this.physics.add.collider(this.player, this.physics.add.existing(this.outline, true));
 		this.physics.add.collider(this.player, this.physics.add.existing(this.timeText, true));
+
+		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 925, 1390, 300, 0x000000, 0)
+			.setStrokeStyle(5, 0xffffff, 1).setAlpha(0);
 	}
 
 	update(time, delta) {
