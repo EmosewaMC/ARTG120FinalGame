@@ -1,4 +1,9 @@
 const maxEnergy = 100;
+const StartTime = 7; // 8am
+
+function hoursToMinutes(time) {
+	return time * 60;
+}
 
 function timeToText(time) {
 	time = Math.floor(time % (24 * 60)); // Normalize to 24 hours
@@ -36,7 +41,7 @@ class Intro extends Phaser.Scene {
 	}
 
 	create() {
-		this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(2.70);
+		this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 		this.add.text(100, 100, "Mornings", {
 			font: "100px Arial",
 			fill: "#ffffff",
@@ -53,7 +58,7 @@ class Intro extends Phaser.Scene {
 		this.input.once("pointerdown", () => {
 			this.scene.start("Overworld", {
 				energy: maxEnergy,
-				time: 10 * 60 + 50
+				time: hoursToMinutes(StartTime)
 			});
 		});
 	}
@@ -62,6 +67,70 @@ class Intro extends Phaser.Scene {
 class Overworld extends Phaser.Scene {
 	constructor() {
 		super("Overworld");
+	}
+	runTime(time, delta) {
+		this.time += delta / 1000;
+		this.timeText.setText("Time: " + timeToText(this.time));
+		// Check if the player is intersecting with the interactables and if they are display a message to interact
+		if (this.physics.overlap(this.player, this.interactables)) {
+			this.interactText.setAlpha(1);
+		} else {
+			this.interactText.setAlpha(0);
+		}
+	}
+	runInteractables(time, delta) {
+		if (this.physics.overlap(this.player, this.messengers)) {
+			if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
+				this.canReleaseText = false;
+				this.textActive = true;
+				this.playerEnergy -= 1;
+				this.activeText = this.add.text(this.player.x, this.player.y, "You have interacted", {
+					font: "50px Arial",
+					fill: "#ff0000",
+					stroke: "#000000",
+					strokeThickness: 5,
+					align: "center"
+				});
+			} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
+				this.textActive = false;
+				this.canReleaseText = false;
+				if (this.activeText != undefined) {
+					this.activeText.destroy();
+				}
+			}
+		} else {
+			this.textActive = false;
+			if (this.activeText != undefined) {
+				this.activeText.destroy();
+			}
+		}
+		if (this.activeText != undefined) {
+			this.activeText.x = this.player.x;
+			this.activeText.y = this.player.y;
+		}
+	}
+
+	runInput(time, delta) {
+		let velocity = { x: 0, y: 0 };
+		if (this.wKey.isDown) {
+			velocity.y -= this.maxVelocity;
+		}
+		if (this.aKey.isDown) {
+			velocity.x -= this.maxVelocity;
+		}
+		if (this.sKey.isDown) {
+			velocity.y += this.maxVelocity;
+		}
+		if (this.dKey.isDown) {
+			velocity.x += this.maxVelocity;
+		}
+		if (!this.fKey.isDown) {
+			this.canReleaseText = true;
+		}
+		this.player.setVelocity(velocity.x, velocity.y);
+		if (velocity.x != 0 || velocity.y != 0) {
+			this.player.setAngle(Math.atan2(velocity.y, velocity.x) * 180 / Math.PI);
+		}
 	}
 
 	init(data) {
@@ -72,25 +141,33 @@ class Overworld extends Phaser.Scene {
 		this.activeText = undefined;
 	}
 
+	preloadImage(image) {
+		this.load.image(image, "assets/" + image + ".png");
+	}
+
+	preloadAnimation(image) {
+		this.load.image(image, "assets/animations/" + image + ".png");
+	}
+
 	preload() {
-		this.load.image("Player", "assets/PlayerSprite.png");
+		this.preloadImage("FrontIdle");
 	}
 
 	create() {
 		registerInputHandlers(this);
 		this.maxVelocity = 300;
-		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, "Player")
-			.setScale(0.5)
+		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, "FrontIdle")
+			.setScale(1.0)
 			.setCollideWorldBounds(true)
 			.setMaxVelocity(this.maxVelocity, this.maxVelocity);
 		this.interactables = [];
-		this.interactables.push(this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "Player")
-			.setScale(0.5)
+		this.interactables.push(this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "FrontIdle")
+			.setScale(0.75)
 			.setImmovable(true));
 		this.messengers = [];
 		// push 5 more at random positions
 		for (let i = 0; i < 5; i++) {
-			this.messengers.push(this.physics.add.sprite(Math.random() * this.cameras.main.width, Math.random() * this.cameras.main.height, "Player")
+			this.messengers.push(this.physics.add.sprite(Math.random() * this.cameras.main.width, Math.random() * this.cameras.main.height, "FrontIdle")
 				.setScale(0.5)
 				.setImmovable(true));
 		}
@@ -128,63 +205,9 @@ class Overworld extends Phaser.Scene {
 	}
 
 	update(time, delta) {
-		this.time += delta / 1000;
-		this.timeText.setText("Time: " + timeToText(this.time));
-		// Check if the player is intersecting with the interactables and if they are display a message to interact
-		if (this.physics.overlap(this.player, this.interactables)) {
-			this.interactText.setAlpha(1);
-		} else {
-			this.interactText.setAlpha(0);
-		}
-		if (this.physics.overlap(this.player, this.messengers)) {
-			if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
-				this.canReleaseText = false;
-				this.textActive = true;
-				this.playerEnergy -= 1;
-				this.activeText = this.add.text(this.player.x, this.player.y, "You have interacted", {
-					font: "50px Arial",
-					fill: "#ff0000",
-					stroke: "#000000",
-					strokeThickness: 5,
-					align: "center"
-				});
-			} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
-				this.textActive = false;
-				this.canReleaseText = false;
-				if (this.activeText != undefined) {
-					this.activeText.destroy();
-				}
-			}
-		} else {
-			this.textActive = false;
-			if (this.activeText != undefined) {
-				this.activeText.destroy();
-			}
-		}
-		if (this.activeText != undefined) {
-			this.activeText.x = this.player.x;
-			this.activeText.y = this.player.y;
-		}
-		let velocity = { x: 0, y: 0 };
-		if (this.wKey.isDown) {
-			velocity.y -= this.maxVelocity;
-		}
-		if (this.aKey.isDown) {
-			velocity.x -= this.maxVelocity;
-		}
-		if (this.sKey.isDown) {
-			velocity.y += this.maxVelocity;
-		}
-		if (this.dKey.isDown) {
-			velocity.x += this.maxVelocity;
-		}
-		if (!this.fKey.isDown) {
-			this.canReleaseText = true;
-		}
-		this.player.setVelocity(velocity.x, velocity.y);
-		if (velocity.x != 0 || velocity.y != 0) {
-			this.player.setAngle(Math.atan2(velocity.y, velocity.x) * 180 / Math.PI);
-		}
+		this.runTime(time, delta);
+		this.runInteractables(time, delta);
+		this.runInput(time, delta);
 	}
 }
 
