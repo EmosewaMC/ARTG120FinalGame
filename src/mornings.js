@@ -1,6 +1,34 @@
 const maxEnergy = 100;
 const StartTime = 7; // 8am
 
+class SceneLoader extends Phaser.Scene {
+	preloadImage(image) {
+		this.load.image(image, "assets/" + image + ".png");
+	}
+
+	preloadAnimation(image) {
+		this.load.image(image, "assets/animations/" + image + ".png");
+	}
+
+	preload() {
+		// cache all images
+		this.preloadImage("BackIdle");
+		this.preloadImage("Backpack");
+		this.preloadImage("Door");
+		this.preloadImage("FrontIdle");
+		this.preloadImage("Opening");
+		this.preloadImage("PlayerSprite");
+		this.preloadImage("SideIdleLeft");
+		this.preloadImage("SideIdleRight");
+
+		// cache all animations
+		this.preloadAnimation("BackWalk1");
+		this.preloadAnimation("BackWalk2");
+		this.preloadAnimation("FrontWalk1");
+		this.preloadAnimation("FrontWalk2");
+	}
+}
+
 function hoursToMinutes(time) {
 	return time * 60;
 }
@@ -31,13 +59,9 @@ function getLeftAlign(energy) {
 	return maxEnergy * 3 - (maxEnergy - energy) * 1.5;
 }
 
-class Intro extends Phaser.Scene {
+class Intro extends SceneLoader {
 	constructor() {
 		super("Intro");
-	}
-
-	preload() {
-		this.load.image("Opening", "assets/Opening.png");
 	}
 
 	create() {
@@ -64,7 +88,7 @@ class Intro extends Phaser.Scene {
 	}
 }
 
-class Overworld extends Phaser.Scene {
+class Overworld extends SceneLoader {
 	constructor() {
 		super("Overworld");
 	}
@@ -79,7 +103,7 @@ class Overworld extends Phaser.Scene {
 		}
 	}
 	runInteractables(time, delta) {
-		if (this.physics.overlap(this.player, this.messengers)) {
+		if (this.physics.overlap(this.player, this.interactables)) {
 			if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
 				this.canReleaseText = false;
 				this.textActive = true;
@@ -112,25 +136,49 @@ class Overworld extends Phaser.Scene {
 
 	runInput(time, delta) {
 		let velocity = { x: 0, y: 0 };
-		if (this.wKey.isDown) {
+		let movingAsset = "";
+		if (this.wKey.isDown) { // Going up
 			velocity.y -= this.maxVelocity;
+			this.idleAsset = "BackIdle";
+			movingAsset = "BackWalk";
 		}
-		if (this.aKey.isDown) {
+		if (this.aKey.isDown) { // Going left
 			velocity.x -= this.maxVelocity;
+			this.idleAsset = "SideIdleLeft";
+			movingAsset = "SideWalk";
 		}
-		if (this.sKey.isDown) {
+		if (this.sKey.isDown) { // Going down
 			velocity.y += this.maxVelocity;
+			this.idleAsset = "FrontIdle";
+			movingAsset = "FrontWalk";
 		}
-		if (this.dKey.isDown) {
+		if (this.dKey.isDown) { // Going right
 			velocity.x += this.maxVelocity;
+			this.idleAsset = "SideIdleRight";
+			movingAsset = "SideWalk";
 		}
 		if (!this.fKey.isDown) {
 			this.canReleaseText = true;
 		}
+
+		if (oldasset != newAsset) {
+			this.player.setTexture(newAsset);
+		} else {
+			this.framesWithPreviousAsset++;
+		}
+
 		this.player.setVelocity(velocity.x, velocity.y);
 		if (velocity.x != 0 || velocity.y != 0) {
 			this.player.setAngle(Math.atan2(velocity.y, velocity.x) * 180 / Math.PI);
+		} else {
+			this.player.setTexture(this.idleAsset);
 		}
+	}
+
+	createInteractable(x, y, asset) {
+		this.interactables.push(this.physics.add.sprite(x, y, asset)
+			.setScale(0.5)
+			.setImmovable(true));
 	}
 
 	init(data) {
@@ -139,21 +187,12 @@ class Overworld extends Phaser.Scene {
 		this.textActive = false;
 		this.canReleaseText = true;
 		this.activeText = undefined;
-	}
-
-	preloadImage(image) {
-		this.load.image(image, "assets/" + image + ".png");
-	}
-
-	preloadAnimation(image) {
-		this.load.image(image, "assets/animations/" + image + ".png");
-	}
-
-	preload() {
-		this.preloadImage("FrontIdle");
+		this.framesWithPreviousAsset = 0;
+		this.idleAsset = "";
 	}
 
 	create() {
+		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 		registerInputHandlers(this);
 		this.maxVelocity = 300;
 		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, "FrontIdle")
@@ -164,10 +203,10 @@ class Overworld extends Phaser.Scene {
 		this.interactables.push(this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "FrontIdle")
 			.setScale(0.75)
 			.setImmovable(true));
-		this.messengers = [];
+		this.interactables = [];
 		// push 5 more at random positions
 		for (let i = 0; i < 5; i++) {
-			this.messengers.push(this.physics.add.sprite(Math.random() * this.cameras.main.width, Math.random() * this.cameras.main.height, "FrontIdle")
+			this.interactables.push(this.physics.add.sprite(Math.random() * this.cameras.main.width, Math.random() * this.cameras.main.height, "FrontIdle")
 				.setScale(0.5)
 				.setImmovable(true));
 		}
@@ -211,7 +250,7 @@ class Overworld extends Phaser.Scene {
 	}
 }
 
-class BattleScene extends Phaser.Scene {
+class BattleScene extends SceneLoader {
 	constructor() {
 		super("BattleScene");
 	}
@@ -220,8 +259,6 @@ class BattleScene extends Phaser.Scene {
 		this.playerEnergy = data.energy;
 		this.time = data.time;
 	}
-
-	preload() { }
 
 	create() {
 		this.showingNoEnergy = false;
