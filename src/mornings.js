@@ -2,6 +2,16 @@ const maxEnergy = 100;
 const StartTime = 11; // 8am
 const EndTime = 12; // 1pm
 
+const LowTimeLost = 0.25;
+const MediumTimeLost = 0.5;
+const HighTimeLost = 1;
+
+const LowEnergy = 5;
+const MediumEnergy = 10;
+const HighEnergy = 15;
+
+const Seed = Math.random();
+
 class SceneLoader extends Phaser.Scene {
 	preloadImage(image) {
 		this.load.image(image, "assets/" + image + ".png");
@@ -103,8 +113,13 @@ class Overworld extends SceneLoader {
 
 		for (let [objName, obj] of Object.entries(this.interactables)) {
 			if (this.physics.overlap(this.player, obj)) {
-				this.interactText.setAlpha(1);
+				if (this.activeText == undefined) this.interactText.setAlpha(1);
+				else this.interactText.setAlpha(0);
 			} else {
+				if (this.activeText != undefined) {
+					this.activeText.destroy();
+					this.activeText = undefined;
+				}
 				this.interactText.setAlpha(0);
 			}
 		}
@@ -132,12 +147,14 @@ class Overworld extends SceneLoader {
 					this.canReleaseText = false;
 					if (this.activeText != undefined) {
 						this.activeText.destroy();
+						this.activeText = undefined;
 					}
 				}
 			} else {
 				this.textActive = false;
 				if (this.activeText != undefined) {
 					this.activeText.destroy();
+					this.activeText = undefined;
 				}
 			}
 			if (this.activeText != undefined) {
@@ -224,7 +241,15 @@ class Overworld extends SceneLoader {
 		this.interactables = {
 			Phone: (this.physics.add.sprite(500, 340, "FrontIdle").setScale(0.5))
 		};
-		this.interactables.Phone.interactText = "I am a phone";
+		this.interactables.Phone.interactText = "Your notifications are always silenced.";
+		this.interactables.Phone.interactions = [
+			"You have no new messages, and your friend posted cat pics.",
+			"You have 173 unread emails and 3 new texts from your parents. Instead of checking any of these, you just scroll through social media."
+		];
+		this.interactables.Phone.interactActions = [
+			"Check phone",
+			"Put the phone down"
+		];
 		console.log(this.interactables);
 		registerInputHandlers(this);
 		this.maxVelocity = 300;
