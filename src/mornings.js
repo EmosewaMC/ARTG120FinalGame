@@ -1,10 +1,10 @@
 const maxEnergy = 100;
-const StartTime = 11; // 8am
+const StartTime = 7; // 8am
 const EndTime = 12; // 1pm
 
-const LowTimeLost = 0.25;
-const MediumTimeLost = 0.5;
-const HighTimeLost = 1;
+const LowTime = 0.25; // 15 minutes
+const MediumTime = 0.5; // 30 minutes
+const HighTime = 1; // 1 hour
 
 const LowEnergy = 5;
 const MediumEnergy = 10;
@@ -12,7 +12,7 @@ const HighEnergy = 15;
 
 const Debug = false;
 
-const Seed = Math.random();
+Seed = Math.random();
 
 class SceneLoader extends Phaser.Scene {
 	preloadImage(image) {
@@ -72,6 +72,7 @@ class Intro extends SceneLoader {
 	}
 
 	create() {
+		Seed = Math.random();
 		this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 		this.add.text(100, 100, "Mornings", {
 			font: "100px Arial",
@@ -125,7 +126,7 @@ class Overworld extends SceneLoader {
 			this.outline.destroy();
 			this.outline = undefined;
 		}
-		if (this.playerEnergy > maxEnergy) this.playerEnergy = maxEnergy;
+		if (this.playerEnergy >= maxEnergy) this.playerEnergy = maxEnergy;
 		if (this.playerEnergy < 0) {
 			this.playerEnergy = 0;
 			this.scene.start("Intro");
@@ -168,7 +169,6 @@ class Overworld extends SceneLoader {
 				if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
 					this.canReleaseText = false;
 					this.textActive = true;
-					this.playerEnergy -= 1;
 					this.interactedObject = obj;
 					this.activeText = this.add.text(40, 900, obj.interactText, {
 						font: "50px Arial",
@@ -246,11 +246,15 @@ class Overworld extends SceneLoader {
 							this.scene.playerEnergy -= this.scene.interactedObject.interactions[Math.round(Seed * 2) % 2].cost.energy;
 							this.scene.rerenderEnergy();
 							this.scene.activeText.destroy();
+							this.scene.time += this.scene.interactedObject.interactions[Math.round(Seed * 2) % 2].cost.time;
+
 							this.scene.textActive = false;
 							this.scene.activeText = undefined;
 						}
 						this.scene.disablePlayerMovement = false;
 						this.scene.canReleaseText = true;
+						this.scene.releasedKey = false;
+						this.scene.input.keyboard.removeAllListeners();
 					});
 				} else {
 					if (this.activeText != undefined) {
@@ -356,6 +360,30 @@ class Overworld extends SceneLoader {
 		);
 	}
 
+	initializePhone(phone) {
+		phone.interactText = "Your notifications are always silenced.";
+		phone.interactions = {
+			0: {
+				description: "You have no new messages, and your friend posted cat pics.",
+				cost: {
+					energy: -MediumEnergy,
+					time: hoursToMinutes(LowTime)
+				}
+			},
+			1: {
+				description: "You have 173 unread emails and 3 new texts from your\nparents. Instead of checking any of these,\nyou just scroll through social media.",
+				cost: {
+					energy: LowEnergy,
+					time: hoursToMinutes(HighTime)
+				}
+			}
+		};
+		phone.interactActions = {
+			leftAction: "Check phone",
+			rightAction: "Put the phone down"
+		};
+	}
+
 	create() {
 		// log the pointer position when it is in the game
 		this.input.on('pointerdown', (pointer) => {
@@ -366,27 +394,7 @@ class Overworld extends SceneLoader {
 		this.interactables = {
 			Phone: (this.physics.add.sprite(500, 340, "FrontIdle").setScale(0.5))
 		};
-		this.interactables.Phone.interactText = "Your notifications are always silenced.";
-		this.interactables.Phone.interactions = {
-			0: {
-				description: "You have no new messages, and your friend posted cat pics.",
-				cost: {
-					energy: -MediumEnergy,
-					time: 0
-				}
-			},
-			1: {
-				description: "You have 173 unread emails and 3 new texts from your\nparents. Instead of checking any of these,\nyou just scroll through social media.",
-				cost: {
-					energy: LowEnergy,
-					time: 0
-				}
-			}
-		};
-		this.interactables.Phone.interactActions = {
-			leftAction: "Check phone",
-			rightAction: "Put the phone down"
-		};
+		this.initializePhone(this.interactables.Phone);
 
 		this.registerInputHandlers();
 		this.maxVelocity = 300;
