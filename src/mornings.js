@@ -19,6 +19,7 @@ class SceneLoader extends Phaser.Scene {
 		this.preloadImage("Opening");
 		this.preloadImage("PlayerSprite");
 		this.preloadImage("SideIdle");
+		this.preloadImage("Platform");
 
 		// cache all animations
 		this.preloadAnimation("BackWalk1");
@@ -169,10 +170,10 @@ class Overworld extends SceneLoader {
 			if (movingAsset != "" && this.framesWithPreviousAsset > 16) {
 				if (this.movingFrames >= 4) this.movingFrames = 0;
 				this.movingFrames++;
-				if (this.movingFrames % 2 == 1) {
+				if (this.movingFrames % 2 == 0) {
 					movingAsset = this.idleAsset;
 				} else {
-					movingAsset = movingAsset + (this.movingFrames / 2);
+					movingAsset = movingAsset + ((this.movingFrames + 1) / 2);
 				}
 				this.player.setTexture(movingAsset);
 				// flip the above texture if needed
@@ -182,7 +183,7 @@ class Overworld extends SceneLoader {
 				this.framesWithPreviousAsset++;
 			}
 		} else {
-			this.framesWithPreviousAsset = 0;
+			this.framesWithPreviousAsset = 16;
 			this.movingFrames = 0;
 			this.player.setTexture(this.idleAsset);
 		}
@@ -210,9 +211,29 @@ class Overworld extends SceneLoader {
 		registerInputHandlers(this);
 		this.maxVelocity = 300;
 		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, this.idleAsset)
-			.setScale(2.0)
+			.setScale(2.25)
 			.setCollideWorldBounds(true)
 			.setMaxVelocity(this.maxVelocity, this.maxVelocity);
+		this.player.body.setSize(50, 95);
+		// YAY CRAPPY PHYSICS BOUNDS
+		this.ceiling = this.physics.add.sprite(900, 100, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.nightstand = this.physics.add.sprite(-370, 225, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.bed = this.physics.add.sprite(-590, 450, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.dresser = this.physics.add.sprite(1850, 910, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.desk = this.physics.add.sprite(-390, 895, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.floor = this.physics.add.sprite(900, 1125, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.rightWallLower = this.physics.add.sprite(2250, 785, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.rightWallUpper = this.physics.add.sprite(2250, 485, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		this.physics.add.collider(this.player, this.rightWallLower);
+		this.physics.add.collider(this.player, this.rightWallUpper);
+		this.physics.add.collider(this.player, this.floor);
+		this.physics.add.collider(this.player, this.desk);
+		this.physics.add.collider(this.player, this.bed);
+		this.physics.add.collider(this.player, this.dresser);
+		this.physics.add.collider(this.player, this.nightstand);
+		this.physics.add.collider(this.player, this.ceiling);
+		// Move the hitbox down a touch
+		this.player.body.setOffset(20, 14);
 		this.interactables = [];
 		this.interactables.push(this.physics.add.sprite(this.cameras.main.centerX + 100, this.cameras.main.centerY + 100, "FrontIdle")
 			.setScale(0.75)
@@ -359,6 +380,7 @@ const game = new Phaser.Game({
 	physics: {
 		default: 'arcade',
 		arcade: {
+			// debug: true,
 			gravity: {
 				x: 0,
 				y: 0
