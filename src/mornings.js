@@ -18,14 +18,15 @@ class SceneLoader extends Phaser.Scene {
 		this.preloadImage("FrontIdle");
 		this.preloadImage("Opening");
 		this.preloadImage("PlayerSprite");
-		this.preloadImage("SideIdleLeft");
-		this.preloadImage("SideIdleRight");
+		this.preloadImage("SideIdle");
 
 		// cache all animations
 		this.preloadAnimation("BackWalk1");
 		this.preloadAnimation("BackWalk2");
 		this.preloadAnimation("FrontWalk1");
 		this.preloadAnimation("FrontWalk2");
+		this.preloadAnimation("SideWalk1");
+		this.preloadAnimation("SideWalk2");
 	}
 }
 
@@ -137,6 +138,7 @@ class Overworld extends SceneLoader {
 	runInput(time, delta) {
 		let velocity = { x: 0, y: 0 };
 		let movingAsset = "";
+		let flip = false;
 		if (this.wKey.isDown) { // Going up
 			velocity.y -= this.maxVelocity;
 			this.idleAsset = "BackIdle";
@@ -144,8 +146,9 @@ class Overworld extends SceneLoader {
 		}
 		if (this.aKey.isDown) { // Going left
 			velocity.x -= this.maxVelocity;
-			this.idleAsset = "SideIdleLeft";
+			this.idleAsset = "SideIdle";
 			movingAsset = "SideWalk";
+			flip = true;
 		}
 		if (this.sKey.isDown) { // Going down
 			velocity.y += this.maxVelocity;
@@ -154,23 +157,33 @@ class Overworld extends SceneLoader {
 		}
 		if (this.dKey.isDown) { // Going right
 			velocity.x += this.maxVelocity;
-			this.idleAsset = "SideIdleRight";
+			this.idleAsset = "SideIdle";
 			movingAsset = "SideWalk";
 		}
 		if (!this.fKey.isDown) {
 			this.canReleaseText = true;
 		}
 
-		if (oldasset != newAsset) {
-			this.player.setTexture(newAsset);
-		} else {
-			this.framesWithPreviousAsset++;
-		}
-
 		this.player.setVelocity(velocity.x, velocity.y);
 		if (velocity.x != 0 || velocity.y != 0) {
-			this.player.setAngle(Math.atan2(velocity.y, velocity.x) * 180 / Math.PI);
+			if (movingAsset != "" && this.framesWithPreviousAsset > 16) {
+				if (this.movingFrames >= 4) this.movingFrames = 0;
+				this.movingFrames++;
+				if (this.movingFrames % 2 == 1) {
+					movingAsset = this.idleAsset;
+				} else {
+					movingAsset = movingAsset + (this.movingFrames / 2);
+				}
+				this.player.setTexture(movingAsset);
+				// flip the above texture if needed
+				this.player.flipX = flip;
+				this.framesWithPreviousAsset = 0;
+			} else {
+				this.framesWithPreviousAsset++;
+			}
 		} else {
+			this.framesWithPreviousAsset = 0;
+			this.movingFrames = 0;
 			this.player.setTexture(this.idleAsset);
 		}
 	}
@@ -188,15 +201,16 @@ class Overworld extends SceneLoader {
 		this.canReleaseText = true;
 		this.activeText = undefined;
 		this.framesWithPreviousAsset = 0;
-		this.idleAsset = "";
+		this.idleAsset = "FrontIdle";
+		this.movingFrames = 0;
 	}
 
 	create() {
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 		registerInputHandlers(this);
 		this.maxVelocity = 300;
-		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, "FrontIdle")
-			.setScale(1.0)
+		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, this.idleAsset)
+			.setScale(2.0)
 			.setCollideWorldBounds(true)
 			.setMaxVelocity(this.maxVelocity, this.maxVelocity);
 		this.interactables = [];
