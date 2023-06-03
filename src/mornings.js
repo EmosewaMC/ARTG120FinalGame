@@ -10,6 +10,8 @@ const LowEnergy = 5;
 const MediumEnergy = 10;
 const HighEnergy = 15;
 
+const Debug = false;
+
 const Seed = Math.random();
 
 class SceneLoader extends Phaser.Scene {
@@ -113,7 +115,10 @@ class Overworld extends SceneLoader {
 
 		for (let [objName, obj] of Object.entries(this.interactables)) {
 			if (this.physics.overlap(this.player, obj)) {
-				if (this.activeText == undefined) this.interactText.setAlpha(1);
+				if (this.activeText == undefined) {
+					this.interactText.setAlpha(1);
+					this.moveBox.setAlpha(1);
+				}
 				else this.interactText.setAlpha(0);
 			} else {
 				if (this.activeText != undefined) {
@@ -121,6 +126,7 @@ class Overworld extends SceneLoader {
 					this.activeText = undefined;
 				}
 				this.interactText.setAlpha(0);
+				this.moveBox.setAlpha(0);
 			}
 		}
 		if (this.time >= hoursToMinutes(EndTime)) {
@@ -142,6 +148,7 @@ class Overworld extends SceneLoader {
 						strokeThickness: 5,
 						align: "center"
 					});
+					this.moveBox.setAlpha(1);
 				} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
 					this.textActive = false;
 					this.canReleaseText = false;
@@ -236,7 +243,7 @@ class Overworld extends SceneLoader {
 	}
 
 	addPhysicsWall(x, y) {
-		let newPhysBounds = this.physics.add.sprite(x, y, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		let newPhysBounds = this.physics.add.sprite(x, y, "Platform").setScale(1.75).setImmovable(true).setAlpha(Debug);
 		// add a callback for when the object is clicked to output its position
 		newPhysBounds.setInteractive().on('pointerdown', () => {
 			console.log(newPhysBounds.x, newPhysBounds.y);
@@ -247,6 +254,10 @@ class Overworld extends SceneLoader {
 	}
 
 	create() {
+		// log the pointer position when it is in the game
+		this.input.on('pointerdown', (pointer) => {
+			console.log(pointer.x, pointer.y);
+		});
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 
 		this.interactables = {
@@ -283,8 +294,10 @@ class Overworld extends SceneLoader {
 		this.addPhysicsWall(2100, 160);
 		// Move the hitbox down a touch
 		this.player.body.setOffset(20, 14);
-		this.interactText = this.add.text(100, 900, "Press F to pay respects", {
-			font: "100px Arial",
+
+		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 975, 1390, 200, 0x000000, 0.5).setStrokeStyle(5, 0x000000, 1).setAlpha(0);
+		this.interactText = this.add.text(40, 900, "Press F to interact", {
+			font: "60px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5,
@@ -302,9 +315,6 @@ class Overworld extends SceneLoader {
 		});
 		this.physics.add.collider(this.player, this.physics.add.existing(this.outline, true));
 		this.physics.add.collider(this.player, this.physics.add.existing(this.timeText, true));
-
-		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 925, 1390, 300, 0x000000, 0)
-			.setStrokeStyle(5, 0xffffff, 1).setAlpha(0);
 	}
 
 	update(time, delta) {
@@ -409,7 +419,7 @@ const game = new Phaser.Game({
 	physics: {
 		default: 'arcade',
 		arcade: {
-			// debug: true,
+			debug: Debug,
 			gravity: {
 				x: 0,
 				y: 0
