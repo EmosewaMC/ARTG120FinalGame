@@ -396,6 +396,7 @@ class Overworld extends SceneLoader {
 		};
 		// lets put medicine on the dresser
 		// we'll put then water cups on the shelf to the right of the nightstand
+		// dog will go at bottom, between dresser and desk
 		this.initializePhone(this.interactables.Phone);
 
 		this.registerInputHandlers();
