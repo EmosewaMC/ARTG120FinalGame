@@ -141,9 +141,9 @@ class Overworld extends SceneLoader {
 					this.canReleaseText = false;
 					this.textActive = true;
 					this.playerEnergy -= 1;
-					this.activeText = this.add.text(this.player.x, this.player.y, obj.interactText, {
+					this.activeText = this.add.text(40, 900, obj.interactText, {
 						font: "50px Arial",
-						fill: "#ff0000",
+						fill: "#FFFFFF",
 						stroke: "#000000",
 						strokeThickness: 5,
 						align: "center"
@@ -163,10 +163,6 @@ class Overworld extends SceneLoader {
 					this.activeText.destroy();
 					this.activeText = undefined;
 				}
-			}
-			if (this.activeText != undefined) {
-				this.activeText.x = this.player.x;
-				this.activeText.y = this.player.y;
 			}
 		}
 
@@ -297,7 +293,7 @@ class Overworld extends SceneLoader {
 
 		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 975, 1390, 200, 0x000000, 0.5).setStrokeStyle(5, 0x000000, 1).setAlpha(0);
 		this.interactText = this.add.text(40, 900, "Press F to interact", {
-			font: "60px Arial",
+			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5,
