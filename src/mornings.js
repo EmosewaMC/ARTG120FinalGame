@@ -591,21 +591,51 @@ class Battle extends SceneLoader {
 		this.time = data.time;
 	}
 
+	registerInputHandlers() {
+		this.wKey = this.input.keyboard.addKey('W');
+		this.aKey = this.input.keyboard.addKey('A');
+		this.sKey = this.input.keyboard.addKey('S');
+		this.dKey = this.input.keyboard.addKey('D');
+		this.fKey = this.input.keyboard.addKey('F');
+		this.enterKey = this.input.keyboard.addKey('ENTER');
+	}
+
+	rerenderEnergy() {
+		if (this.energyBox != undefined) {
+			this.energyBox.destroy();
+			this.energyBox = undefined;
+		}
+		if (this.outline != undefined) {
+			this.outline.destroy();
+			this.outline = undefined;
+		}
+		if (this.playerEnergy >= maxEnergy) this.playerEnergy = maxEnergy;
+		if (this.playerEnergy < 0) {
+			this.playerEnergy = 0;
+			this.scene.start("Intro");
+		}
+		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
+		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
+	}
+
 	getBattleData() {
 		this.battleOptions = new Map();
 		if (this.battleType == "Backpack") {
-			this.battleOptions.set("Pack laptop",
+			this.battleOptions.set(0,
 				{
+					name: "Pack laptop",
 					description: "As you place your laptop in the bag, the corner of it bumps against the ground a little too hard. You wince",
 					energy: LowEnergy,
 				});
-			this.battleOptions.set("Pack charger",
+			this.battleOptions.set(1,
 				{
+					name: "Pack charger",
 					description: "you crawl under your desk and unplug your charger from the wall, it's all tangled up...",
 					energy: MediumEnergy,
 				});
-			this.battleOptions.set("Zip up",
+			this.battleOptions.set(2,
 				{
+					name: "Zip up",
 					description: "As you zip up the bag, the zipper gets stuck. You jiggle it a bit until eventually it closes completely",
 					energy: LowEnergy,
 				});
@@ -615,18 +645,54 @@ class Battle extends SceneLoader {
 				time: LowTime
 			}
 		} else if (this.battleType == "Door") {
-
+			this.battleOptions.set(0,
+				{
+					name: "Take off clothes",
+					description: "As you undress, the cold air hits your body. You curl inwards and shiver. Better get changed fast!",
+					energy: LowEnergy,
+				});
+			this.battleOptions.set(1,
+				{
+					name: "Put together an outfit",
+					description: "You think about what you want to wear. There's that new shirt your mom got you. I'd go pretty well with your comfy pants and jacket.",
+					energy: MediumEnergy,
+				});
+			this.battleOptions.set(2,
+				{
+					name: "Put on a new shirt",
+					description: "You put on the new shirt. It's a bit itchy and it smells weird. You take it off quickly.",
+					energy: LowEnergy,
+				});
+			this.battleOptions.set(3,
+				{
+					name: "Put on old shirt",
+					description: "You decide to choose your old shirt. It's soft and comfy, and smells like nothing. Which is perfect.",
+					energy: LowEnergy,
+				});
+			this.battleOptions.set(4,
+				{
+					name: "Put on pants",
+					description: "They're slightly too tight. The price we pay for fashion I guess. You wriggle into your pants, and you're a little ashamed that it makes you a bit breathless.",
+					energy: LowEnergy,
+				});
+			this.battleOptions.set(5,
+				{
+					name: "Put on jacket",
+					description: "You put on your jacket and then look at the mirror. It compliments your outfit nicely.",
+					energy: LowEnergy,
+				});
+			this.conclusion = {
+				description: "Battle cleared!",
+				energy: LowEnergy,
+				time: LowTime
+			}
 		}
 	}
 
 	create() {
-		this.showingNoEnergy = false;
-		this.add.text(100, 100, "Battle Scene", {
-			font: "100px Arial",
-			fill: "#ffffff",
-			stroke: "#000000",
-			strokeThickness: 5
-		});
+		this.getBattleData();
+		this.registerInputHandlers();
+		this.rerenderEnergy();
 
 		this.topRightGoon = this.physics.add.sprite(this.cameras.main.centerX + 400, this.cameras.main.centerY - 200, this.battleType)
 			.setImmovable(true)
@@ -640,59 +706,58 @@ class Battle extends SceneLoader {
 		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 925, 1390, 300, 0x000000, 0.75)
 			.setStrokeStyle(5, 0xffffff, 1);
 
-		this.playText = this.add.text(100, 800, "Pick a move", {
-			font: "100px Arial",
+		// create the text for the battle options
+		this.battlePrompt = this.add.text(50, 800, "Choose an action", {
+			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5
 		});
-
-		this.punchText = this.add.text(100, 925, "Punch", {
-			font: "75px Arial",
+		// there will only be a max of 6 options so imma hard code it
+		this.battleOptionsText = [];
+		this.battleOptionsText.push(this.add.text(50, 900, this.battleOptions.get(0).name, {
+			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5
-		}).setInteractive().on("pointerdown", () => {
-			if (this.playerEnergy >= 10) {
-				this.scene.start("Overworld", {
-					energy: this.playerEnergy - 10,
-					time: this.time
-				});
-			} else {
-				if (!this.showingNoEnergy) {
-					this.showingNoEnergy = true;
-					this.playText.setText("Not enough energy");
-					// Add a timer to change the text back after 1 second
-					this.tweens.add({
-						targets: this.playText,
-						alpha: 1,
-						duration: 1000,
-						ease: "Linear",
-						repeat: 0,
-						yoyo: false,
-						onComplete: () => {
-							this.playText.setText("Pick a move");
-							this.showingNoEnergy = false;
-						}
-					});
-				}
-			}
-		});
-
-		this.runText = this.add.text(400, 925, "Run", {
-			font: "75px Arial",
+		}));
+		this.battleOptionsText.push(this.add.text(445, 900, this.battleOptions.get(1).name, {
+			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5
-		}).setInteractive().on("pointerdown", () => {
-			this.scene.start("Overworld", {
-				energy: this.playerEnergy,
-				time: this.time
-			});
-		});
+		}));
+		this.battleOptionsText.push(this.add.text(950, 900, this.battleOptions.get(2).name, {
+			font: "50px Arial",
+			fill: "#ffffff",
+			stroke: "#000000",
+			strokeThickness: 5
+		}));
+		if (this.battleOptions.size >= 4) {
+			this.battleOptionsText.push(this.add.text(50, 1000, this.battleOptions.get(3).name, {
+				font: "50px Arial",
+				fill: "#ffffff",
+				stroke: "#000000",
+				strokeThickness: 5
+			}));
+			this.battleOptionsText.push(this.add.text(425, 1000, this.battleOptions.get(4).name, {
+				font: "50px Arial",
+				fill: "#ffffff",
+				stroke: "#000000",
+				strokeThickness: 5
+			}));
+			this.battleOptionsText.push(this.add.text(800, 1000, this.battleOptions.get(5).name, {
+				font: "50px Arial",
+				fill: "#ffffff",
+				stroke: "#000000",
+				strokeThickness: 5
+			}));
+		}
 	}
 
-	update(time, delta) { }
+	update(time, delta) {
+
+	}
 }
 
 const game = new Phaser.Game({
