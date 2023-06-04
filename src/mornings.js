@@ -619,25 +619,28 @@ class Battle extends SceneLoader {
 	}
 
 	getBattleData() {
-		this.battleOptions = new Map();
+		this.battleOptions = [];
 		if (this.battleType == "Backpack") {
-			this.battleOptions.set(0,
+			this.battleOptions.push(
 				{
 					name: "Pack laptop",
 					description: "As you place your laptop in the bag, the corner of it bumps against the ground a little too hard. You wince",
 					energy: LowEnergy,
+					disabled: false
 				});
-			this.battleOptions.set(1,
+			this.battleOptions.push(
 				{
 					name: "Pack charger",
 					description: "you crawl under your desk and unplug your charger from the wall, it's all tangled up...",
 					energy: MediumEnergy,
+					disabled: false
 				});
-			this.battleOptions.set(2,
+			this.battleOptions.push(
 				{
 					name: "Zip up",
 					description: "As you zip up the bag, the zipper gets stuck. You jiggle it a bit until eventually it closes completely",
 					energy: LowEnergy,
+					disabled: false
 				});
 			this.conclusion = {
 				description: "Battle cleared!",
@@ -645,41 +648,47 @@ class Battle extends SceneLoader {
 				time: LowTime
 			}
 		} else if (this.battleType == "Door") {
-			this.battleOptions.set(0,
+			this.battleOptions.push(
 				{
 					name: "Take off clothes",
 					description: "As you undress, the cold air hits your body. You curl inwards and shiver. Better get changed fast!",
 					energy: MediumEnergy,
+					disabled: false
 				});
-			this.battleOptions.set(1,
+			this.battleOptions.push(
 				{
 					name: "Put together an outfit",
 					description: "You think about what you want to wear. There's that new shirt your mom got you. I'd go pretty well with your comfy pants and jacket.",
 					energy: LowEnergy,
+					disabled: false
 				});
-			this.battleOptions.set(2,
+			this.battleOptions.push(
 				{
 					name: "Put on a new shirt",
 					description: "You put on the new shirt. It's a bit itchy and it smells weird. You take it off quickly.",
 					energy: MediumEnergy,
+					disabled: false
 				});
-			this.battleOptions.set(3,
+			this.battleOptions.push(
 				{
 					name: "Put on old shirt",
 					description: "You decide to choose your old shirt. It's soft and comfy, and smells like nothing. Which is perfect.",
 					energy: 0,
+					disabled: false
 				});
-			this.battleOptions.set(4,
+			this.battleOptions.push(
 				{
 					name: "Put on pants",
 					description: "They're slightly too tight. The price we pay for fashion I guess. You wriggle into your pants, and you're a little ashamed that it makes you a bit breathless.",
 					energy: MediumEnergy,
+					disabled: false
 				});
-			this.battleOptions.set(5,
+			this.battleOptions.push(
 				{
 					name: "Put on jacket",
 					description: "You put on your jacket and then look at the mirror. It compliments your outfit nicely.",
 					energy: -LowEnergy,
+					disabled: false
 				});
 			this.conclusion = {
 				description: "Battle cleared!",
@@ -690,7 +699,9 @@ class Battle extends SceneLoader {
 	}
 
 	create() {
+		this.disabledInputs = 0;
 		this.selectedOption = 0;
+		this.ignoreInput = false;
 		this.releasedKey = true;
 		this.getBattleData();
 		this.registerInputHandlers();
@@ -718,38 +729,38 @@ class Battle extends SceneLoader {
 		});
 		// there will only be a max of 6 options so imma hard code it
 		this.battleOptionsText = [];
-		this.battleOptionsText.push(this.add.text(50, 900, this.battleOptions.get(0).name, {
+		this.battleOptionsText.push(this.add.text(50, 900, this.battleOptions[0].name, {
 			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5
 		}));
-		this.battleOptionsText.push(this.add.text(445, 900, this.battleOptions.get(1).name, {
+		this.battleOptionsText.push(this.add.text(445, 900, this.battleOptions[1].name, {
 			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5
 		}));
-		this.battleOptionsText.push(this.add.text(950, 900, this.battleOptions.get(2).name, {
+		this.battleOptionsText.push(this.add.text(950, 900, this.battleOptions[2].name, {
 			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5
 		}));
-		if (this.battleOptions.size >= 4) {
-			this.battleOptionsText.push(this.add.text(50, 1000, this.battleOptions.get(3).name, {
+		if (this.battleOptions.length >= 4) {
+			this.battleOptionsText.push(this.add.text(50, 1000, this.battleOptions[3].name, {
 				font: "50px Arial",
 				fill: "#ffffff",
 				stroke: "#000000",
 				strokeThickness: 5
 			}));
-			this.battleOptionsText.push(this.add.text(425, 1000, this.battleOptions.get(4).name, {
+			this.battleOptionsText.push(this.add.text(425, 1000, this.battleOptions[4].name, {
 				font: "50px Arial",
 				fill: "#ffffff",
 				stroke: "#000000",
 				strokeThickness: 5
 			}));
-			this.battleOptionsText.push(this.add.text(800, 1000, this.battleOptions.get(5).name, {
+			this.battleOptionsText.push(this.add.text(800, 1000, this.battleOptions[5].name, {
 				font: "50px Arial",
 				fill: "#ffffff",
 				stroke: "#000000",
@@ -757,31 +768,89 @@ class Battle extends SceneLoader {
 			}));
 		}
 		this.wKey.on("down", () => {
-			this.selectedOption += Math.round(this.battleOptions.size / 2);
+			if (this.ignoreInput || this.battleOptions.length < 2) return;
+			this.selectedOption += 3;
 		});
 		this.sKey.on("down", () => {
-			this.selectedOption -= Math.round(this.battleOptions.size / 2);
+			if (this.ignoreInput || this.battleOptions.length < 2) return;
+			this.selectedOption -= 3;
 		});
 		this.aKey.on("down", () => {
-			this.selectedOption++;
+			if (this.ignoreInput || this.battleOptions.length < 2) return;
+			this.selectedOption--;
+			this.verifyOptionBounds();
+			while (this.battleOptions[this.selectedOption % this.battleOptions.length].disabled) {
+				this.selectedOption--;
+				this.verifyOptionBounds();
+			}
 		});
 		this.dKey.on("down", () => {
-			this.selectedOption--;
+			if (this.ignoreInput || this.battleOptions.length < 2) return;
+			this.selectedOption++;
+			this.verifyOptionBounds();
+			while (this.battleOptions[this.selectedOption % this.battleOptions.length].disabled) {
+				this.selectedOption++;
+				this.verifyOptionBounds();
+			}
 		});
 	}
 
+	verifyOptionBounds() {
+		if (this.selectedOption < 0) {
+			this.selectedOption += this.battleOptions.length;
+		}
+		if (this.selectedOption >= this.battleOptions.length) {
+			this.selectedOption -= this.battleOptions.length;
+		}
+	}
+
 	update(time, delta) {
-		let selectedOption = Math.abs(this.selectedOption % this.battleOptions.size);
-		console.log(selectedOption);
+		if (this.ignoreInput) return;
+		console.log(this.selectedOption);
+		this.verifyOptionBounds();
+		let selectedOption = this.selectedOption % this.battleOptions.length;
+		if (this.battleOptions.length > 1) {
+			while (this.battleOptions[selectedOption].disabled) {
+				this.selectedOption++;
+				selectedOption = this.selectedOption % this.battleOptions.length;
+			}
+		}
 		this.battleOptionsText.forEach((option, index) => {
 			if (index == selectedOption) {
 				option.setAlpha(0.55);
-			} else {
+			} else if (!this.battleOptions[index].disabled) {
 				option.setAlpha(1);
+			} else {
+				option.setAlpha(0);
 			}
 		});
-		if (this.fKey.isDown) {
+		if (this.fKey.isDown && this.releasedKey) {
 			this.releasedKey = false;
+			this.playerEnergy -= this.battleOptions[selectedOption].energy;
+			this.rerenderEnergy();
+			this.battleOptions[selectedOption].disabled = true;
+			this.disabledInputs++;
+			if (this.disabledInputs >= this.battleOptions.length) {
+				this.battleOptionsText.forEach((option, index) => {
+					option.setAlpha(0);
+				});
+				this.ignoreInput = true;
+				this.battleOptionsText.push(this.add.text(540, 925, "Battle won!", {
+					font: "75px Arial",
+					fill: "#FFFFFF",
+					stroke: "#000000",
+					strokeThickness: 5
+				}).setAlpha(0.55));
+				// when the f key is pressed start the overworld
+				this.fKey.on("down", () => {
+					this.scene.start("Overworld", {
+						energy: this.playerEnergy,
+						time: this.time
+					});
+				});
+			}
+		} else if (this.fKey.isUp) {
+			this.releasedKey = true;
 		}
 	}
 }
