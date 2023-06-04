@@ -649,37 +649,37 @@ class Battle extends SceneLoader {
 				{
 					name: "Take off clothes",
 					description: "As you undress, the cold air hits your body. You curl inwards and shiver. Better get changed fast!",
-					energy: LowEnergy,
+					energy: MediumEnergy,
 				});
 			this.battleOptions.set(1,
 				{
 					name: "Put together an outfit",
 					description: "You think about what you want to wear. There's that new shirt your mom got you. I'd go pretty well with your comfy pants and jacket.",
-					energy: MediumEnergy,
+					energy: LowEnergy,
 				});
 			this.battleOptions.set(2,
 				{
 					name: "Put on a new shirt",
 					description: "You put on the new shirt. It's a bit itchy and it smells weird. You take it off quickly.",
-					energy: LowEnergy,
+					energy: MediumEnergy,
 				});
 			this.battleOptions.set(3,
 				{
 					name: "Put on old shirt",
 					description: "You decide to choose your old shirt. It's soft and comfy, and smells like nothing. Which is perfect.",
-					energy: LowEnergy,
+					energy: 0,
 				});
 			this.battleOptions.set(4,
 				{
 					name: "Put on pants",
 					description: "They're slightly too tight. The price we pay for fashion I guess. You wriggle into your pants, and you're a little ashamed that it makes you a bit breathless.",
-					energy: LowEnergy,
+					energy: MediumEnergy,
 				});
 			this.battleOptions.set(5,
 				{
 					name: "Put on jacket",
 					description: "You put on your jacket and then look at the mirror. It compliments your outfit nicely.",
-					energy: LowEnergy,
+					energy: -LowEnergy,
 				});
 			this.conclusion = {
 				description: "Battle cleared!",
@@ -690,9 +690,12 @@ class Battle extends SceneLoader {
 	}
 
 	create() {
+		this.selectedOption = 0;
+		this.releasedKey = true;
 		this.getBattleData();
 		this.registerInputHandlers();
 		this.rerenderEnergy();
+		// for each option in battleOptions, set a flag for wasUsed to 
 
 		this.topRightGoon = this.physics.add.sprite(this.cameras.main.centerX + 400, this.cameras.main.centerY - 200, this.battleType)
 			.setImmovable(true)
@@ -753,10 +756,33 @@ class Battle extends SceneLoader {
 				strokeThickness: 5
 			}));
 		}
+		this.wKey.on("down", () => {
+			this.selectedOption += Math.round(this.battleOptions.size / 2);
+		});
+		this.sKey.on("down", () => {
+			this.selectedOption -= Math.round(this.battleOptions.size / 2);
+		});
+		this.aKey.on("down", () => {
+			this.selectedOption++;
+		});
+		this.dKey.on("down", () => {
+			this.selectedOption--;
+		});
 	}
 
 	update(time, delta) {
-
+		let selectedOption = Math.abs(this.selectedOption % this.battleOptions.size);
+		console.log(selectedOption);
+		this.battleOptionsText.forEach((option, index) => {
+			if (index == selectedOption) {
+				option.setAlpha(0.55);
+			} else {
+				option.setAlpha(1);
+			}
+		});
+		if (this.fKey.isDown) {
+			this.releasedKey = false;
+		}
 	}
 }
 
