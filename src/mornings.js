@@ -179,7 +179,6 @@ class Sleeping extends SceneLoader {
 		if (this.fKey.isDown && this.releasedKey) {
 			this.releasedKey = false;
 			if (this.usedTextItem % 2 == 1) {
-				console.log(this.time);
 				this.time += hoursToMinutes(LowTime);
 				if (this.time >= hoursToMinutes(EndTime)) {
 					console.log("You have lost");
@@ -188,7 +187,9 @@ class Sleeping extends SceneLoader {
 			} else {
 				this.scene.start("Overworld", {
 					energy: this.playerEnergy,
-					time: this.time
+					time: this.time,
+					playerX: 158.25,
+					playerY: 656.625
 				});
 			}
 		}
@@ -239,6 +240,19 @@ class Overworld extends SceneLoader {
 				break;
 			}
 		}
+		// if all used interactables are used, add a callback to the Ending object that when intersecting with, the game goes to Intro
+		let allUsed = true;
+		for (let i = 0; i < Object.keys(usedinteractables).length; i++) {
+			if (!usedinteractables[Object.keys(usedinteractables)[i]]) {
+				allUsed = false;
+				break;
+			}
+		}
+		if (allUsed) {
+			if (this.physics.overlap(this.player, this.ending)) {
+				interacting = this.ending;
+			}
+		}
 		if (interacting != undefined) {
 			if (this.activeText == undefined) {
 				this.interactText.setAlpha(1);
@@ -266,7 +280,6 @@ class Overworld extends SceneLoader {
 			if (this.physics.overlap(this.player, obj) && obj.sparkles != undefined) {
 				interacting = obj;
 				name = objName;
-				if (name == "TaskBook") name = "";
 				break;
 			}
 		}
@@ -319,6 +332,20 @@ class Overworld extends SceneLoader {
 	}
 
 	runInput(time, delta) {
+		// if all used interactables are used, add a callback to the Ending object that when intersecting with, the game goes to Intro
+		let allUsed = true;
+		for (let i = 0; i < Object.keys(usedinteractables).length; i++) {
+			if (!usedinteractables[Object.keys(usedinteractables)[i]]) {
+				allUsed = false;
+				break;
+			}
+		}
+		if (allUsed) {
+			if (this.physics.overlap(this.player, this.ending) && this.fKey.isDown) {
+				this.scene.start("Intro");
+				return;
+			}
+		}
 		if (this.disablePlayerMovement) {
 			if (this.player.body.velocity.y != 0 || this.player.body.velocity.x != 0) {
 				this.player.setVelocity(0, 0);
@@ -350,6 +377,8 @@ class Overworld extends SceneLoader {
 							battle: this.interactedObject.interactions.get(1),
 							energy: this.playerEnergy,
 							time: this.time,
+							playerX: this.player.x,
+							playerY: this.player.y
 						});
 						return;
 					}
@@ -364,8 +393,8 @@ class Overworld extends SceneLoader {
 							this.scene.rerenderEnergy();
 							this.scene.activeText.destroy();
 							this.scene.time += response.cost.time;
-							
-							if (this.scene.interactedObject.sparkles != undefined) {
+
+							if (this.scene.interactedObject.sparkles != undefined && this.scene.interactedObjectName != "TaskBook") {
 								this.scene.interactedObject.sparkles.destroy();
 								this.scene.interactedObject.sparkles = undefined;
 								usedinteractables[this.scene.interactedObjectName] = true;
@@ -467,10 +496,18 @@ class Overworld extends SceneLoader {
 		this.leftAction = undefined;
 		this.rightAction = undefined;
 		this.releasedKey = false;
+		this.playerX = data.playerX;
+		this.playerY = data.playerY;
+		if (this.playerX == undefined) {
+			this.playerX = 158.25;
+		}
+		if (this.playerY == undefined) {
+			this.playerY = 656.625;
+		}
 	}
 
 	addPhysicsWall(x, y) {
-		let newPhysBounds = this.physics.add.sprite(x, y, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
+		let newPhysBounds = this.physics.add.sprite(x, y, "Platform").setScale(1.75).setImmovable(true).setAlpha(Debug);
 		// add a callback for when the object is clicked to output its position
 		newPhysBounds.setInteractive().on('pointerdown', () => {
 			console.log(newPhysBounds.x, newPhysBounds.y);
@@ -580,10 +617,11 @@ class Overworld extends SceneLoader {
 			rightAction: "Don't pet"
 		};
 		if (!usedinteractables["Dog"]) dog.sparkles = this.add.image(880, 950, "Sparkle").setScale(0.2).setAlpha(0.7);
+		// move dogs interaction box up and to the left
 	}
 
 	initializeBackpack(backpack) {
-		backpack.interactText = "Inside are miscellaneous papers, but you also need your laptop for class.";
+		backpack.interactText = "Inside are miscellaneous papers, but you also need\nyour laptop for class.";
 		backpack.interactions = new Map();
 		backpack.interactions.set(0, "StartBattle");
 		backpack.interactions.set(1, "Backpack");
@@ -591,7 +629,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Pack for school",
 			rightAction: "Leave it"
 		};
-		if (!usedinteractables["Backpack"]) backpack.sparkles = this.add.image(1150, 800, "Sparkle").setScale(0.1).setAlpha(0.7);
+		if (!usedinteractables["Backpack"]) backpack.sparkles = this.add.image(1150, 890, "Sparkle").setScale(0.2).setAlpha(0.7);
 	}
 
 	initializeCloset(closet) {
@@ -603,7 +641,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Get changed",
 			rightAction: "Stay in pajamas"
 		};
-		if (!usedinteractables["Closet"]) closet.sparkles = this.add.image(1100, 200, "Sparkle").setScale(0.1).setAlpha(0.7);
+		if (!usedinteractables["Closet"]) closet.sparkles = this.add.image(1050, 200, "Sparkle").setScale(0.2).setAlpha(0.7);
 	}
 
 	initializeTaskBook(taskBook) {
@@ -634,12 +672,13 @@ class Overworld extends SceneLoader {
 		this.interactables = {
 			"Phone": this.physics.add.sprite(750, 220, "Phone").setScale(1.5),
 			"Medicine": this.physics.add.sprite(400, 350, "FrontIdle").setScale(0.5).setAlpha(0),
-			"WaterCups": this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
+			"WaterCups": this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5).setAlpha(0),
 			"Dog": this.physics.add.sprite(880, 950, "Dog").setScale(1.5),
-			"Backpack": this.physics.add.sprite(1150, 800, "FrontIdle").setScale(2.0),
-			"Closet": this.physics.add.sprite(1100, 200, "FrontIdle").setScale(2.0),
+			"Backpack": this.physics.add.sprite(1150, 800, "FrontIdle").setScale(2.0).setAlpha(0),
+			"Closet": this.physics.add.sprite(1100, 200, "FrontIdle").setScale(2.0).setAlpha(0),
 			"TaskBook": this.physics.add.sprite(100, 700, "FrontIdle").setScale(1.5).setAlpha(0)
 		};
+		this.ending = this.physics.add.sprite(1450, 600, "FrontIdle").setScale(1.5).setAlpha(1);
 		// lets put medicine on the dresser
 		// we'll put then water cups on the shelf to the right of the nightstand
 		// dog will go at bottom, between dresser and desk
@@ -653,7 +692,7 @@ class Overworld extends SceneLoader {
 
 		this.registerInputHandlers();
 		this.maxVelocity = 300;
-		this.player = this.physics.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, this.idleAsset)
+		this.player = this.physics.add.sprite(this.playerX, this.playerY, this.idleAsset)
 			.setScale(2.25)
 			.setCollideWorldBounds(true)
 			.setMaxVelocity(this.maxVelocity, this.maxVelocity);
@@ -667,6 +706,7 @@ class Overworld extends SceneLoader {
 		this.addPhysicsWall(-536, 895);
 		this.addPhysicsWall(-860, 795);
 		this.addPhysicsWall(-400, 975);
+		this.addPhysicsWall(1715, 1015);
 		this.addPhysicsWall(900, 1125);
 		this.addPhysicsWall(2250, 310);
 		this.addPhysicsWall(2250, 785);
@@ -713,6 +753,8 @@ class Battle extends SceneLoader {
 		this.battleType = data.battle;
 		this.playerEnergy = data.energy;
 		this.time = data.time;
+		this.playerX = data.playerX;
+		this.playerY = data.playerY;
 	}
 
 	registerInputHandlers() {
@@ -931,7 +973,6 @@ class Battle extends SceneLoader {
 	update(time, delta) {
 		if (this.fKey.isUp) this.releasedKey = true;
 		if (this.ignoreInput) return;
-		console.log(this.selectedOption);
 		this.verifyOptionBounds();
 		let selectedOption = this.selectedOption % this.battleOptions.length;
 		if (this.battleOptions.length > 1) {
@@ -980,12 +1021,34 @@ class Battle extends SceneLoader {
 					this.fKey.on("down", () => {
 						this.scene.start("Overworld", {
 							energy: this.playerEnergy,
-							time: this.time
+							time: this.time,
+							playerX: this.playerX,
+							playerY: this.playerY,
 						});
 					});
 				}
 			});
 		}
+	}
+}
+
+class Ending extends SceneLoader {
+	constructor() {
+		super("Ending");
+	}
+
+	create() {
+		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
+		this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, "You made it to school on time after fully preparing!\n\nProgramming\nDave Markowitz\n\nArt\nAdrian Cheng\nEmily Wen\nMicah Kiang ", {
+			font: "75px Arial",
+			fill: "#FFFFFF",
+			stroke: "#000000",
+			strokeThickness: 5,
+			align: "center"
+		}).setWordWrapWidth(1300).setOrigin(0.5);
+		this.input.on("pointerdown", () => {
+			this.scene.start("Intro");
+		});
 	}
 }
 
@@ -1006,6 +1069,6 @@ const game = new Phaser.Game({
 			}
 		}
 	},
-	scene: [Intro, Sleeping, Overworld, Battle],
+	scene: [Intro, Sleeping, Overworld, Battle, Ending],
 	title: "Mornings",
 });
