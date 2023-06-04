@@ -141,21 +141,26 @@ class Overworld extends SceneLoader {
 		// Check if the player is intersecting with the interactables and if they are display a message to interact
 		// log the size of interactables
 
+		let interacting = undefined;
 		for (let [objName, obj] of Object.entries(this.interactables)) {
 			if (this.physics.overlap(this.player, obj)) {
-				if (this.activeText == undefined) {
-					this.interactText.setAlpha(1);
-					this.moveBox.setAlpha(1);
-				}
-				else this.interactText.setAlpha(0);
-			} else {
-				if (this.activeText != undefined) {
-					this.activeText.destroy();
-					this.activeText = undefined;
-				}
-				this.interactText.setAlpha(0);
-				this.moveBox.setAlpha(0);
+				interacting = objName;
+				break;
 			}
+		}
+		if (interacting != undefined) {
+			if (this.activeText == undefined) {
+				this.interactText.setAlpha(1);
+				this.moveBox.setAlpha(1);
+			}
+			else this.interactText.setAlpha(0);
+		} else {
+			if (this.activeText != undefined) {
+				this.activeText.destroy();
+				this.activeText = undefined;
+			}
+			this.interactText.setAlpha(0);
+			this.moveBox.setAlpha(0);
 		}
 		if (this.time >= hoursToMinutes(EndTime)) {
 			console.log("You have lost");
@@ -164,53 +169,59 @@ class Overworld extends SceneLoader {
 	}
 
 	runInteractables(time, delta) {
+		let interacting = undefined;
 		for (let [objName, obj] of Object.entries(this.interactables)) {
 			if (this.physics.overlap(this.player, obj)) {
-				if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
-					this.canReleaseText = false;
-					this.textActive = true;
-					this.interactedObject = obj;
-					this.activeText = this.add.text(40, 900, obj.interactText, {
-						font: "50px Arial",
-						fill: "#FFFFFF",
-						stroke: "#000000",
-						strokeThickness: 5,
-						align: "center"
-					});
-					// We only plan to have 2 actions to take
-					this.leftAction = this.add.text(140, 1000, obj.interactActions.leftAction, {
-						font: "50px Arial",
-						fill: "#FFFFFF",
-						stroke: "#000000",
-						strokeThickness: 5,
-						align: "center"
-					});
-					this.rightAction = this.add.text(740, 1000, obj.interactActions.rightAction, {
-						font: "50px Arial",
-						fill: "#FFFFFF",
-						stroke: "#000000",
-						strokeThickness: 5,
-						align: "center"
-					}).setAlpha(0.5);
-					this.moveBox.setAlpha(1);
-					this.disablePlayerMovement = true;
-					this.usedTextItem = 1;
-				} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
-					this.textActive = false;
-					this.canReleaseText = false;
-					if (this.activeText != undefined) {
-						this.activeText.destroy();
-						this.activeText = undefined;
-					}
-				}
-			} else {
+				interacting = obj;
+				break;
+			}
+		}
+		if (interacting != undefined) {
+			if (!this.textActive && this.canReleaseText && this.fKey.isDown) {
+				this.canReleaseText = false;
+				this.textActive = true;
+				this.interactedObject = interacting;
+				this.activeText = this.add.text(40, 900, interacting.interactText, {
+					font: "50px Arial",
+					fill: "#FFFFFF",
+					stroke: "#000000",
+					strokeThickness: 5,
+					align: "center"
+				});
+				// We only plan to have 2 actions to take
+				this.leftAction = this.add.text(140, 1000, interacting.interactActions.leftAction, {
+					font: "50px Arial",
+					fill: "#FFFFFF",
+					stroke: "#000000",
+					strokeThickness: 5,
+					align: "center"
+				});
+				this.rightAction = this.add.text(740, 1000, interacting.interactActions.rightAction, {
+					font: "50px Arial",
+					fill: "#FFFFFF",
+					stroke: "#000000",
+					strokeThickness: 5,
+					align: "center"
+				}).setAlpha(0.5);
+				this.moveBox.setAlpha(1);
+				this.disablePlayerMovement = true;
+				this.usedTextItem = 1;
+			} else if (this.textActive && this.canReleaseText && this.fKey.isDown) {
 				this.textActive = false;
+				this.canReleaseText = false;
 				if (this.activeText != undefined) {
 					this.activeText.destroy();
 					this.activeText = undefined;
 				}
 			}
+		} else {
+			this.textActive = false;
+			if (this.activeText != undefined) {
+				this.activeText.destroy();
+				this.activeText = undefined;
+			}
 		}
+
 
 	}
 
@@ -230,23 +241,27 @@ class Overworld extends SceneLoader {
 					this.leftAction.setAlpha(1);
 					this.rightAction.setAlpha(0.5);
 				}
-			} else if (!(this.aKey.isDown || this.dKey.isDown)) {
+			} else if (!(this.aKey.isDown || this.dKey.isDown || this.enterKey.isDown)) {
 				this.releasedKey = true;
 			}
 			if (this.enterKey.isDown && this.releasedKey) {
+				this.releasedKey = false;
 				let selectedOption = this.usedTextItem % 2;
 				if (selectedOption == 0) {
-					this.activeText.setText(this.interactedObject.interactions[Math.round(Seed * 2) % 2].description);
+					// log the length of the interactions
+					let length = this.interactedObject.interactions.size;
+					let response = this.interactedObject.interactions.get(Math.round(Seed * length) % length);
+					this.activeText.setText(response.description);
 					this.activeText.setPosition(40, 885);
 					this.leftAction.destroy();
 					this.rightAction.destroy();
 					// add a one off callback that when a key is pressed it will destroy the text
 					this.input.keyboard.once('keydown', function (event) {
 						if (this.scene.activeText != undefined) {
-							this.scene.playerEnergy -= this.scene.interactedObject.interactions[Math.round(Seed * 2) % 2].cost.energy;
+							this.scene.playerEnergy -= response.cost.energy;
 							this.scene.rerenderEnergy();
 							this.scene.activeText.destroy();
-							this.scene.time += this.scene.interactedObject.interactions[Math.round(Seed * 2) % 2].cost.time;
+							this.scene.time += response.cost.time;
 
 							this.scene.textActive = false;
 							this.scene.activeText = undefined;
@@ -271,7 +286,6 @@ class Overworld extends SceneLoader {
 						this.rightAction = undefined;
 					}
 					this.disablePlayerMovement = false;
-					this.canReleaseText = true;
 				}
 			}
 			return;
@@ -362,7 +376,90 @@ class Overworld extends SceneLoader {
 
 	initializePhone(phone) {
 		phone.interactText = "Your notifications are always silenced.";
-		phone.interactions = {
+		phone.interactions = new Map();
+		phone.interactions.set(0,
+			{
+				description: "You have no new messages, and your friend posted cat pics.",
+				cost: {
+					energy: -MediumEnergy,
+					time: hoursToMinutes(LowTime)
+				}
+			});
+		phone.interactions.set(1,
+			{
+				description: "You have 173 unread emails and 3 new texts from your\nparents. Instead of checking any of these,\nyou just scroll through social media.",
+				cost: {
+					energy: LowEnergy,
+					time: hoursToMinutes(HighTime)
+				}
+			});
+		phone.interactActions = {
+			leftAction: "Check phone",
+			rightAction: "Put the phone down"
+		};
+	}
+
+	initializeMedicine(medicine) {
+		medicine.interactText = "According to your therapist, these tiny pills are supposed to make you feel better.";
+		medicine.interactions = {
+			0: {
+				description: "You took your medication today.",
+				cost: {
+					energy: LowEnergy,
+					time: hoursToMinutes(LowTime)
+				}
+			},
+			1: {
+				description: "You took your medication today.",
+				cost: {
+					energy: LowEnergy,
+					time: hoursToMinutes(LowTime)
+				}
+			}
+		};
+		medicine.interactActions = {
+			leftAction: "Take medication",
+			rightAction: "Skip for today"
+		};
+
+	}
+
+	initializeWaterCups(waterCups) {
+		waterCups.interactText = "There are various cups on your desk, all with different amounts of water.";
+		waterCups.interactions = new Map();
+		waterCups.interactions.set(0,
+			{
+				description: "The cup you picked up has no water.",
+				cost: {
+					energy: 0,
+					time: hoursToMinutes(LowTime)
+				}
+			});
+		waterCups.interactions.set(1, {
+			description: "The cup you picked up has half a sip of water left. You sip. Still thirsty. ",
+			cost: {
+				energy: -LowEnergy,
+				time: hoursToMinutes(LowTime)
+			}
+		});
+		waterCups.interactions.set(2, {
+			description: "You enjoy a couple gulps of water. You feel refreshed.",
+			cost: {
+				energy: MediumEnergy,
+				time: hoursToMinutes(LowTime)
+			}
+		});
+
+		waterCups.interactActions = {
+			leftAction: "Drink from a cup",
+			rightAction: "Don't drink"
+		};
+
+	}
+
+	initializeDog(dog) {
+		dog.interactText = "Your notifications are always silenced.";
+		dog.interactions = {
 			0: {
 				description: "You have no new messages, and your friend posted cat pics.",
 				cost: {
@@ -378,10 +475,19 @@ class Overworld extends SceneLoader {
 				}
 			}
 		};
-		phone.interactActions = {
+		dog.interactActions = {
 			leftAction: "Check phone",
 			rightAction: "Put the phone down"
 		};
+
+	}
+
+	initializeBackpack(backpack) {
+
+	}
+
+	initializeCloset(closet) {
+
 	}
 
 	create() {
@@ -392,12 +498,22 @@ class Overworld extends SceneLoader {
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 
 		this.interactables = {
-			Phone: (this.physics.add.sprite(500, 340, "FrontIdle").setScale(0.5))
+			Phone: this.physics.add.sprite(500, 340, "FrontIdle").setScale(0.5),
+			// Medicine: this.physics.add.sprite(500, 500, "FrontIdle").setScale(0.5),
+			WaterCups: this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
+			// Dog: this.physics.add.sprite(500, 500, "FrontIdle").setScale(0.5),
+			// Backpack: undefined,
+			// Closet: undefined
 		};
 		// lets put medicine on the dresser
 		// we'll put then water cups on the shelf to the right of the nightstand
 		// dog will go at bottom, between dresser and desk
 		this.initializePhone(this.interactables.Phone);
+		// this.initializeMedicine(this.interactables.Medicine);
+		this.initializeWaterCups(this.interactables.WaterCups);
+		// this.initializeDog(this.interactables.Dog);
+		// this.initializeBackpack(this.interactables.Backpack);
+		// this.initializeCloset(this.interactables.Closet);
 
 		this.registerInputHandlers();
 		this.maxVelocity = 300;
