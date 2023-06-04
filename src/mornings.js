@@ -251,6 +251,10 @@ class Overworld extends SceneLoader {
 					// log the length of the interactions
 					let length = this.interactedObject.interactions.size;
 					let response = this.interactedObject.interactions.get(Math.round(Seed * length) % length);
+					if (response == "StartBattle") {
+						this.scene.start("Battle");
+						return;
+					}
 					this.activeText.setText(response.description);
 					this.activeText.setPosition(40, 885);
 					this.leftAction.destroy();
@@ -476,11 +480,30 @@ class Overworld extends SceneLoader {
 	}
 
 	initializeBackpack(backpack) {
-
+		backpack.interactText = "Inside are miscellaneous papers, but you also need your laptop for class.";
+		backpack.interactions = new Map();
+		backpack.interactions.set(0, "StartBattle");
+		backpack.interactActions = {
+			leftAction: "Pack for school",
+			rightAction: "Leave it"
+		};
 	}
 
 	initializeCloset(closet) {
-
+		closet.interactText = "It's your dog. He's a good boi. He looks up at you.";
+		closet.interactions = new Map();
+		closet.interactions.set(0,
+			{
+				description: "Yayyy doggy.",
+				cost: {
+					energy: -LowEnergy,
+					time: hoursToMinutes(LowTime)
+				}
+			});
+		closet.interactActions = {
+			leftAction: "Pet dog",
+			rightAction: "Don't pet"
+		};
 	}
 
 	create() {
@@ -495,7 +518,7 @@ class Overworld extends SceneLoader {
 			Medicine: this.physics.add.sprite(400, 350, "FrontIdle").setScale(0.5),
 			WaterCups: this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
 			Dog: this.physics.add.sprite(800, 900, "FrontIdle").setScale(2.0),
-			// Backpack: undefined,
+			Backpack: this.physics.add.sprite(1200, 700, "FrontIdle").setScale(2.0),
 			// Closet: undefined
 		};
 		// lets put medicine on the dresser
@@ -505,7 +528,7 @@ class Overworld extends SceneLoader {
 		this.initializeMedicine(this.interactables.Medicine);
 		this.initializeWaterCups(this.interactables.WaterCups);
 		this.initializeDog(this.interactables.Dog);
-		// this.initializeBackpack(this.interactables.Backpack);
+		this.initializeBackpack(this.interactables.Backpack);
 		// this.initializeCloset(this.interactables.Closet);
 
 		this.registerInputHandlers();
@@ -560,9 +583,9 @@ class Overworld extends SceneLoader {
 	}
 }
 
-class BattleScene extends SceneLoader {
+class Battle extends SceneLoader {
 	constructor() {
-		super("BattleScene");
+		super("Battle");
 	}
 
 	init(data) {
@@ -662,6 +685,6 @@ const game = new Phaser.Game({
 			}
 		}
 	},
-	scene: [Intro, Overworld, BattleScene],
+	scene: [Intro, Overworld, Battle],
 	title: "Mornings",
 });
