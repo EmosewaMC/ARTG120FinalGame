@@ -10,9 +10,18 @@ const LowEnergy = 5;
 const MediumEnergy = 10;
 const HighEnergy = 15;
 
-const Debug = true;
+const Debug = false;
 
 Seed = Math.random();
+
+usedinteractables = {
+	"Phone": false,
+	"Backpack": false,
+	"Closet": false,
+	"Dog": false,
+	"Medicine": false,
+	"WaterCups": false
+};
 
 class SceneLoader extends Phaser.Scene {
 	preloadImage(image) {
@@ -252,9 +261,12 @@ class Overworld extends SceneLoader {
 
 	runInteractables(time, delta) {
 		let interacting = undefined;
+		let name = "";
 		for (let [objName, obj] of Object.entries(this.interactables)) {
 			if (this.physics.overlap(this.player, obj) && obj.sparkles != undefined) {
 				interacting = obj;
+				name = objName;
+				if (name == "TaskBook") name = "";
 				break;
 			}
 		}
@@ -263,6 +275,7 @@ class Overworld extends SceneLoader {
 				this.canReleaseText = false;
 				this.textActive = true;
 				this.interactedObject = interacting;
+				this.interactedObjectName = name;
 				this.activeText = this.add.text(40, 885, interacting.interactText, {
 					font: "50px Arial",
 					fill: "#FFFFFF",
@@ -332,6 +345,7 @@ class Overworld extends SceneLoader {
 					let length = this.interactedObject.interactions.size;
 					let response = this.interactedObject.interactions.get(Math.round(Seed * length) % length);
 					if (this.interactedObject.interactions.get(0) == "StartBattle") {
+						usedinteractables[this.interactedObjectName] = true;
 						this.scene.start("Battle", {
 							battle: this.interactedObject.interactions.get(1),
 							energy: this.playerEnergy,
@@ -354,6 +368,7 @@ class Overworld extends SceneLoader {
 							if (this.scene.interactedObject.sparkles != undefined) {
 								this.scene.interactedObject.sparkles.destroy();
 								this.scene.interactedObject.sparkles = undefined;
+								usedinteractables[this.scene.interactedObjectName] = true;
 							}
 							this.scene.textActive = false;
 							this.scene.activeText = undefined;
@@ -488,7 +503,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Check phone",
 			rightAction: "Put the phone down"
 		};
-		phone.sparkles = this.add.image(750, 220, "Sparkle").setScale(0.1).setAlpha(0.7);
+		if (!usedinteractables["Phone"]) phone.sparkles = this.add.image(750, 220, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeMedicine(medicine) {
@@ -513,7 +528,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Take medication",
 			rightAction: "Skip for today"
 		};
-		medicine.sparkles = this.add.image(370, 350, "Sparkle").setScale(0.1).setAlpha(0.7);
+		if (!usedinteractables["Medicine"]) medicine.sparkles = this.add.image(370, 350, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeWaterCups(waterCups) {
@@ -546,7 +561,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Drink from a cup",
 			rightAction: "Don't drink"
 		};
-		waterCups.sparkles = this.add.image(440, 925, "Sparkle").setScale(0.1).setAlpha(0.7);
+		if (!usedinteractables["WaterCups"]) waterCups.sparkles = this.add.image(430, 945, "Sparkle").setScale(0.12).setAlpha(0.7);
 	}
 
 	initializeDog(dog) {
@@ -564,7 +579,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Pet dog",
 			rightAction: "Don't pet"
 		};
-		dog.sparkles = this.add.image(800, 900, "Sparkle").setScale(0.1).setAlpha(0.7);
+		if (!usedinteractables["Dog"]) dog.sparkles = this.add.image(880, 950, "Sparkle").setScale(0.2).setAlpha(0.7);
 	}
 
 	initializeBackpack(backpack) {
@@ -576,7 +591,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Pack for school",
 			rightAction: "Leave it"
 		};
-		backpack.sparkles = this.add.image(1150, 800, "Sparkle").setScale(0.1).setAlpha(0.7);
+		if (!usedinteractables["Backpack"]) backpack.sparkles = this.add.image(1150, 800, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeCloset(closet) {
@@ -588,7 +603,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Get changed",
 			rightAction: "Stay in pajamas"
 		};
-		closet.sparkles = this.add.image(1100, 200, "Sparkle").setScale(0.1).setAlpha(0.7);
+		if (!usedinteractables["Closet"]) closet.sparkles = this.add.image(1100, 200, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeTaskBook(taskBook) {
@@ -606,7 +621,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Check tasks",
 			rightAction: "Leave"
 		};
-		taskBook.sparkles = this.add.image(100, 700, "Sparkle").setScale(0.1).setAlpha(0.7);
+		taskBook.sparkles = this.add.image(100, 650, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	create() {
@@ -617,13 +632,13 @@ class Overworld extends SceneLoader {
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 
 		this.interactables = {
-			Phone: this.physics.add.sprite(750, 220, "Phone").setScale(1.5),
-			Medicine: this.physics.add.sprite(400, 350, "FrontIdle").setScale(0.5).setAlpha(0),
-			WaterCups: this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
-			Dog: this.physics.add.sprite(800, 900, "FrontIdle").setScale(2.0),
-			Backpack: this.physics.add.sprite(1150, 800, "FrontIdle").setScale(2.0),
-			Closet: this.physics.add.sprite(1100, 200, "FrontIdle").setScale(2.0),
-			TaskBook: this.physics.add.sprite(100, 700, "FrontIdle").setScale(1.5)
+			"Phone": this.physics.add.sprite(750, 220, "Phone").setScale(1.5),
+			"Medicine": this.physics.add.sprite(400, 350, "FrontIdle").setScale(0.5).setAlpha(0),
+			"WaterCups": this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
+			"Dog": this.physics.add.sprite(880, 950, "Dog").setScale(1.5),
+			"Backpack": this.physics.add.sprite(1150, 800, "FrontIdle").setScale(2.0),
+			"Closet": this.physics.add.sprite(1100, 200, "FrontIdle").setScale(2.0),
+			"TaskBook": this.physics.add.sprite(100, 700, "FrontIdle").setScale(1.5).setAlpha(0)
 		};
 		// lets put medicine on the dresser
 		// we'll put then water cups on the shelf to the right of the nightstand
