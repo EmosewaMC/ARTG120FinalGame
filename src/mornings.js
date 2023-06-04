@@ -497,7 +497,7 @@ class Overworld extends SceneLoader {
 		closet.interactText = "Maybe today you won't wear pajamas to class.";
 		closet.interactions = new Map();
 		closet.interactions.set(0, "StartBattle");
-		closet.interactions.set(1, "Closet");
+		closet.interactions.set(1, "Door");
 		closet.interactActions = {
 			leftAction: "Get changed",
 			rightAction: "Stay in pajamas"
@@ -592,6 +592,34 @@ class Battle extends SceneLoader {
 		this.time = data.time;
 	}
 
+	getBattleData() {
+		this.battleOptions = new Map();
+		if (this.battleType == "Backpack") {
+			this.battleOptions.set("Pack laptop",
+				{
+					description: "As you place your laptop in the bag, the corner of it bumps against the ground a little too hard. You wince",
+					energy: LowEnergy,
+				});
+			this.battleOptions.set("Pack charger",
+				{
+					description: "you crawl under your desk and unplug your charger from the wall, it's all tangled up...",
+					energy: MediumEnergy,
+				});
+			this.battleOptions.set("Zip up",
+				{
+					description: "As you zip up the bag, the zipper gets stuck. You jiggle it a bit until eventually it closes completely",
+					energy: LowEnergy,
+				});
+			this.conclusion = {
+				description: "Battle cleared!",
+				energy: LowEnergy,
+				time: LowTime
+			}
+		} else if (this.battleType == "Door") {
+
+		}
+	}
+
 	create() {
 		this.showingNoEnergy = false;
 		this.add.text(100, 100, "Battle Scene", {
@@ -600,7 +628,8 @@ class Battle extends SceneLoader {
 			stroke: "#000000",
 			strokeThickness: 5
 		});
-		this.topRightGoon = this.physics.add.sprite(this.cameras.main.centerX + 200, this.cameras.main.centerY - 200, "ProtagonistBattleSprite")
+
+		this.topRightGoon = this.physics.add.sprite(this.cameras.main.centerX + 400, this.cameras.main.centerY - 200, this.battleType)
 			.setImmovable(true)
 			.setScale(2.5)
 			.setFlipX(true);
@@ -608,6 +637,9 @@ class Battle extends SceneLoader {
 		this.middleLeftGoon = this.physics.add.sprite(this.cameras.main.centerX - 400, this.cameras.main.centerY + 100, "ProtagonistBattleSprite")
 			.setImmovable(true)
 			.setScale(2.5);
+
+		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 925, 1390, 300, 0x000000, 0.75)
+			.setStrokeStyle(5, 0xffffff, 1);
 
 		this.playText = this.add.text(100, 800, "Pick a move", {
 			font: "100px Arial",
@@ -659,9 +691,6 @@ class Battle extends SceneLoader {
 				time: this.time
 			});
 		});
-
-		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 925, 1390, 300, 0x000000, 0)
-			.setStrokeStyle(5, 0xffffff, 1);
 	}
 
 	update(time, delta) { }
