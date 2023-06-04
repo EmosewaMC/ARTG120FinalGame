@@ -10,7 +10,7 @@ const LowEnergy = 5;
 const MediumEnergy = 10;
 const HighEnergy = 15;
 
-const Debug = false;
+const Debug = true;
 
 Seed = Math.random();
 
@@ -89,14 +89,14 @@ class Intro extends SceneLoader {
 			align: "left"
 		});
 		this.input.once("pointerdown", () => {
-			this.scene.start("Overworld", {
+			this.scene.start("Sleeping", {
 				energy: maxEnergy,
 				time: hoursToMinutes(StartTime)
 			});
 		});
 		// if any key is pressed, start the game
 		this.input.keyboard.on("keydown", () => {
-			this.scene.start("Overworld", {
+			this.scene.start("Sleeping", {
 				energy: maxEnergy,
 				time: hoursToMinutes(StartTime)
 			});
@@ -104,6 +104,84 @@ class Intro extends SceneLoader {
 	}
 }
 
+class Sleeping extends SceneLoader {
+	constructor() {
+		super("Sleeping");
+	}
+
+	init(data) {
+		this.playerEnergy = data.energy;
+		this.time = data.time;
+	}
+
+	create() {
+		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 975, 1390, 200, 0x000000, 0.5).setStrokeStyle(5, 0xFFFFFF, 1).setAlpha(1);
+		this.activeText = this.add.text(40, 500, "You stayed up late last night watching random Yootoob videos and now you can barely open your eyes. You remember writing a list of things to do before you go to class… If you want to get to class on time, or even at all, you should get up now.", {
+			font: "40px Arial",
+			fill: "#FFFFFF",
+			stroke: "#000000",
+			strokeThickness: 5,
+			align: "center"
+		}).setWordWrapWidth(1300);
+		// We only plan to have 2 actions to take
+		this.leftAction = this.add.text(140, 950, "Wake up", {
+			font: "75px Arial",
+			fill: "#FFFFFF",
+			stroke: "#000000",
+			strokeThickness: 5,
+			align: "center"
+		});
+		this.rightAction = this.add.text(740, 950, "Sleep more", {
+			font: "75px Arial",
+			fill: "#FFFFFF",
+			stroke: "#000000",
+			strokeThickness: 5,
+			align: "center"
+		}).setAlpha(0.5);
+		this.usedTextItem = 1;
+		this.registerInputHandlers();
+		this.releasedKey = true;
+	}
+
+	registerInputHandlers() {
+		this.aKey = this.input.keyboard.addKey('A');
+		this.dKey = this.input.keyboard.addKey('D');
+		this.fKey = this.input.keyboard.addKey('F');
+	}
+
+	update() {
+		if ((this.aKey.isDown || this.dKey.isDown) && this.releasedKey) {
+			this.releasedKey = false;
+			this.usedTextItem++;
+		}
+		if (!(this.aKey.isDown || this.dKey.isDown || this.fKey.isDown)) {
+			this.releasedKey = true;
+		}
+		if (this.usedTextItem % 2 == 1) {
+			this.leftAction.setAlpha(1);
+			this.rightAction.setAlpha(0.5);
+		} else {
+			this.leftAction.setAlpha(0.5);
+			this.rightAction.setAlpha(1);
+		}
+		if (this.fKey.isDown && this.releasedKey) {
+			this.releasedKey = false;
+			if (this.usedTextItem % 2 == 1) {
+				console.log(this.time);
+				this.time += hoursToMinutes(LowTime);
+				if (this.time >= hoursToMinutes(EndTime)) {
+					console.log("You have lost");
+					this.scene.start("Intro");
+				}
+			} else {
+				this.scene.start("Overworld", {
+					energy: this.playerEnergy,
+					time: this.time
+				});
+			}
+		}
+	}
+}
 class Overworld extends SceneLoader {
 	constructor() {
 		super("Overworld");
@@ -560,6 +638,7 @@ class Overworld extends SceneLoader {
 		this.addPhysicsWall(-590, 450);
 		this.addPhysicsWall(1850, 910);
 		this.addPhysicsWall(-536, 895);
+		this.addPhysicsWall(-860, 795);
 		this.addPhysicsWall(-400, 975);
 		this.addPhysicsWall(900, 1125);
 		this.addPhysicsWall(2250, 310);
@@ -900,6 +979,6 @@ const game = new Phaser.Game({
 			}
 		}
 	},
-	scene: [Intro, Overworld, Battle],
+	scene: [Intro, Sleeping, Overworld, Battle],
 	title: "Mornings",
 });
