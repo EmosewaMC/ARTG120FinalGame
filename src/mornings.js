@@ -401,22 +401,22 @@ class Overworld extends SceneLoader {
 
 	initializeMedicine(medicine) {
 		medicine.interactText = "According to your therapist, these tiny pills are supposed to make you feel better.";
-		medicine.interactions = {
-			0: {
+		medicine.interactions = new Map();
+		medicine.interactions.set(0,
+			{
 				description: "You took your medication today.",
 				cost: {
 					energy: LowEnergy,
 					time: hoursToMinutes(LowTime)
 				}
-			},
-			1: {
-				description: "You took your medication today.",
-				cost: {
-					energy: LowEnergy,
-					time: hoursToMinutes(LowTime)
-				}
+			});
+		medicine.interactions.set(1, {
+			description: "You took your medication today.",
+			cost: {
+				energy: LowEnergy,
+				time: hoursToMinutes(LowTime)
 			}
-		};
+		});
 		medicine.interactActions = {
 			leftAction: "Take medication",
 			rightAction: "Skip for today"
@@ -458,26 +458,19 @@ class Overworld extends SceneLoader {
 	}
 
 	initializeDog(dog) {
-		dog.interactText = "Your notifications are always silenced.";
-		dog.interactions = {
-			0: {
-				description: "You have no new messages, and your friend posted cat pics.",
+		dog.interactText = "It's your dog. He's a good boi. He looks up at you.";
+		dog.interactions = new Map();
+		dog.interactions.set(0,
+			{
+				description: "Yayyy doggy.",
 				cost: {
-					energy: -MediumEnergy,
+					energy: -LowEnergy,
 					time: hoursToMinutes(LowTime)
 				}
-			},
-			1: {
-				description: "You have 173 unread emails and 3 new texts from your\nparents. Instead of checking any of these,\nyou just scroll through social media.",
-				cost: {
-					energy: LowEnergy,
-					time: hoursToMinutes(HighTime)
-				}
-			}
-		};
+			});
 		dog.interactActions = {
-			leftAction: "Check phone",
-			rightAction: "Put the phone down"
+			leftAction: "Pet dog",
+			rightAction: "Don't pet"
 		};
 
 	}
@@ -498,10 +491,10 @@ class Overworld extends SceneLoader {
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 
 		this.interactables = {
-			Phone: this.physics.add.sprite(500, 340, "FrontIdle").setScale(0.5),
-			// Medicine: this.physics.add.sprite(500, 500, "FrontIdle").setScale(0.5),
+			Phone: this.physics.add.sprite(750, 210, "FrontIdle").setScale(0.5),
+			Medicine: this.physics.add.sprite(400, 350, "FrontIdle").setScale(0.5),
 			WaterCups: this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
-			// Dog: this.physics.add.sprite(500, 500, "FrontIdle").setScale(0.5),
+			Dog: this.physics.add.sprite(800, 900, "FrontIdle").setScale(2.0),
 			// Backpack: undefined,
 			// Closet: undefined
 		};
@@ -509,9 +502,9 @@ class Overworld extends SceneLoader {
 		// we'll put then water cups on the shelf to the right of the nightstand
 		// dog will go at bottom, between dresser and desk
 		this.initializePhone(this.interactables.Phone);
-		// this.initializeMedicine(this.interactables.Medicine);
+		this.initializeMedicine(this.interactables.Medicine);
 		this.initializeWaterCups(this.interactables.WaterCups);
-		// this.initializeDog(this.interactables.Dog);
+		this.initializeDog(this.interactables.Dog);
 		// this.initializeBackpack(this.interactables.Backpack);
 		// this.initializeCloset(this.interactables.Closet);
 
