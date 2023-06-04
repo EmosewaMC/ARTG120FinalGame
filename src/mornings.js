@@ -252,7 +252,10 @@ class Overworld extends SceneLoader {
 					let length = this.interactedObject.interactions.size;
 					let response = this.interactedObject.interactions.get(Math.round(Seed * length) % length);
 					if (response == "StartBattle") {
-						this.scene.start("Battle");
+						this.scene.start("Battle", {
+							energy: this.playerEnergy,
+							time: this.time,
+						});
 						return;
 					}
 					this.activeText.setText(response.description);
@@ -490,19 +493,12 @@ class Overworld extends SceneLoader {
 	}
 
 	initializeCloset(closet) {
-		closet.interactText = "It's your dog. He's a good boi. He looks up at you.";
+		closet.interactText = "Maybe today you won't wear pajamas to class.";
 		closet.interactions = new Map();
-		closet.interactions.set(0,
-			{
-				description: "Yayyy doggy.",
-				cost: {
-					energy: -LowEnergy,
-					time: hoursToMinutes(LowTime)
-				}
-			});
+		closet.interactions.set(0, "StartBattle");
 		closet.interactActions = {
-			leftAction: "Pet dog",
-			rightAction: "Don't pet"
+			leftAction: "Get changed",
+			rightAction: "Stay in pajamas"
 		};
 	}
 
@@ -519,7 +515,7 @@ class Overworld extends SceneLoader {
 			WaterCups: this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
 			Dog: this.physics.add.sprite(800, 900, "FrontIdle").setScale(2.0),
 			Backpack: this.physics.add.sprite(1200, 700, "FrontIdle").setScale(2.0),
-			// Closet: undefined
+			Closet: this.physics.add.sprite(1100, 200, "FrontIdle").setScale(2.0)
 		};
 		// lets put medicine on the dresser
 		// we'll put then water cups on the shelf to the right of the nightstand
@@ -529,7 +525,7 @@ class Overworld extends SceneLoader {
 		this.initializeWaterCups(this.interactables.WaterCups);
 		this.initializeDog(this.interactables.Dog);
 		this.initializeBackpack(this.interactables.Backpack);
-		// this.initializeCloset(this.interactables.Closet);
+		this.initializeCloset(this.interactables.Closet);
 
 		this.registerInputHandlers();
 		this.maxVelocity = 300;
