@@ -1081,7 +1081,7 @@ class Ending extends SceneLoader {
 			}
 		}
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
-		this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, text + "\n\nProgramming\nDave Markowitz\n\nArt\nAdrian Cheng\nEmily Wen\nMicah Kiang ", {
+		this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, text + "\n\nProgramming\nDave Markowitz\n\nArt\nAdrian Cheng\nMicah Kiang\n\nWriting\nEmily Wen", {
 			font: "75px Arial",
 			fill: "#FFFFFF",
 			stroke: "#000000",
