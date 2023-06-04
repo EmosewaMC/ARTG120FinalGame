@@ -726,7 +726,7 @@ class Battle extends SceneLoader {
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 5
-		});
+		}).setWordWrapWidth(1300, true);
 		// there will only be a max of 6 options so imma hard code it
 		this.battleOptionsText = [];
 		this.battleOptionsText.push(this.add.text(50, 900, this.battleOptions[0].name, {
@@ -805,6 +805,7 @@ class Battle extends SceneLoader {
 	}
 
 	update(time, delta) {
+		if (this.fKey.isUp) this.releasedKey = true;
 		if (this.ignoreInput) return;
 		console.log(this.selectedOption);
 		this.verifyOptionBounds();
@@ -827,30 +828,39 @@ class Battle extends SceneLoader {
 		if (this.fKey.isDown && this.releasedKey) {
 			this.releasedKey = false;
 			this.playerEnergy -= this.battleOptions[selectedOption].energy;
-			this.rerenderEnergy();
-			this.battleOptions[selectedOption].disabled = true;
-			this.disabledInputs++;
-			if (this.disabledInputs >= this.battleOptions.length) {
-				this.battleOptionsText.forEach((option, index) => {
-					option.setAlpha(0);
-				});
-				this.ignoreInput = true;
-				this.battleOptionsText.push(this.add.text(540, 925, "Battle won!", {
-					font: "75px Arial",
-					fill: "#FFFFFF",
-					stroke: "#000000",
-					strokeThickness: 5
-				}).setAlpha(0.55));
-				// when the f key is pressed start the overworld
-				this.fKey.on("down", () => {
-					this.scene.start("Overworld", {
-						energy: this.playerEnergy,
-						time: this.time
+			this.battlePrompt.setText(this.battleOptions[selectedOption].description);
+			this.ignoreInput = true;
+			this.battleOptionsText.forEach((option, index) => {
+				option.setAlpha(0);
+			});
+			this.fKey.on("up", () => {
+				if (!this.releasedKey) return;
+				this.battlePrompt.setText("Choose an action");
+				this.fKey.removeAllListeners();
+				this.ignoreInput = false;
+				this.rerenderEnergy();
+				this.battleOptions[selectedOption].disabled = true;
+				this.disabledInputs++;
+				if (this.disabledInputs >= this.battleOptions.length) {
+					this.battleOptionsText.forEach((option, index) => {
+						option.setAlpha(0);
 					});
-				});
-			}
-		} else if (this.fKey.isUp) {
-			this.releasedKey = true;
+					this.ignoreInput = true;
+					this.battleOptionsText.push(this.add.text(540, 925, "Battle won!", {
+						font: "75px Arial",
+						fill: "#FFFFFF",
+						stroke: "#000000",
+						strokeThickness: 5
+					}).setAlpha(0.55));
+					// when the f key is pressed start the overworld
+					this.fKey.on("down", () => {
+						this.scene.start("Overworld", {
+							energy: this.playerEnergy,
+							time: this.time
+						});
+					});
+				}
+			});
 		}
 	}
 }
