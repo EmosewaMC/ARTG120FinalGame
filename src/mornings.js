@@ -223,7 +223,7 @@ class Overworld extends SceneLoader {
 			this.playerEnergy = 0;
 			this.scene.start("Ending", {
 				won: false,
-				time: true
+				energy: true
 			});
 		}
 		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
@@ -798,7 +798,10 @@ class Battle extends SceneLoader {
 		if (this.playerEnergy >= maxEnergy) this.playerEnergy = maxEnergy;
 		if (this.playerEnergy < 0) {
 			this.playerEnergy = 0;
-			this.scene.start("Intro");
+			this.scene.start("Ending", {
+				won: false,
+				energy: true
+			});
 		}
 		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
 		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
@@ -1069,9 +1072,9 @@ class Ending extends SceneLoader {
 		if (this.won) {
 			text = "You made it to school on time after fully preparing!";
 		} else {
-			if (this.energy != false) {
+			if (this.energy) {
 				text = "Oh no! You ran out of energy and fell back asleep!";
-			} else if (this.time != false) {
+			} else if (this.time) {
 				text = "Oh no! You ran out of time and were late!";
 			} else {
 				text = "Oh no! You ran out of energy or time!";
@@ -1086,6 +1089,9 @@ class Ending extends SceneLoader {
 			align: "center"
 		}).setWordWrapWidth(1300).setOrigin(0.5);
 		this.input.on("pointerdown", () => {
+			this.scene.start("Intro");
+		});
+		this.input.keyboard.on("keydown", () => {
 			this.scene.start("Intro");
 		});
 	}
