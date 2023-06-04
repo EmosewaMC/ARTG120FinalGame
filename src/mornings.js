@@ -221,13 +221,25 @@ class Overworld extends SceneLoader {
 		if (this.playerEnergy >= maxEnergy) this.playerEnergy = maxEnergy;
 		if (this.playerEnergy < 0) {
 			this.playerEnergy = 0;
-			this.scene.start("Intro");
+			this.scene.start("Ending", {
+				won: false,
+				time: true
+			});
 		}
 		this.energyBox = this.add.rectangle(getLeftAlign(this.playerEnergy), 100, this.playerEnergy * 3, 100, 0x00FF00, 1);
 		this.outline = this.add.rectangle(maxEnergy * 3, 100, maxEnergy * 3, 100, 0x000000, 0).setStrokeStyle(5, 0xffffff, 1);
 	}
 
 	runTime(time, delta) {
+		if (Math.round(time / 1000) % 5 == 0) {
+			if (!this.takenEnergyThisFrame) {
+				this.takenEnergyThisFrame = true;
+				this.playerEnergy -= 3;
+				this.rerenderEnergy();
+			}
+		} else {
+			this.takenEnergyThisFrame = false;
+		}
 		this.time += delta / 1000;
 		this.timeText.setText("Time: " + timeToText(this.time));
 		// Check if the player is intersecting with the interactables and if they are display a message to interact
@@ -249,6 +261,8 @@ class Overworld extends SceneLoader {
 			}
 		}
 		if (allUsed) {
+			this.endingSparkles.setAlpha(0.7);
+			this.interactText.setText("Press F to leave!");
 			if (this.physics.overlap(this.player, this.ending)) {
 				interacting = this.ending;
 			}
@@ -269,7 +283,10 @@ class Overworld extends SceneLoader {
 		}
 		if (this.time >= hoursToMinutes(EndTime)) {
 			console.log("You have lost");
-			this.scene.start("Intro");
+			this.scene.start("Ending", {
+				won: false,
+				time: true
+			});
 		}
 	}
 
@@ -342,7 +359,9 @@ class Overworld extends SceneLoader {
 		}
 		if (allUsed) {
 			if (this.physics.overlap(this.player, this.ending) && this.fKey.isDown) {
-				this.scene.start("Intro");
+				this.scene.start("Ending", {
+					won: true
+				});
 				return;
 			}
 		}
@@ -679,6 +698,7 @@ class Overworld extends SceneLoader {
 			"TaskBook": this.physics.add.sprite(100, 700, "FrontIdle").setScale(1.5).setAlpha(0)
 		};
 		this.ending = this.physics.add.sprite(1450, 600, "FrontIdle").setScale(1.5).setAlpha(1);
+		this.endingSparkles = this.add.image(1400, 600, "Sparkle").setScale(0.2).setAlpha(0);
 		// lets put medicine on the dresser
 		// we'll put then water cups on the shelf to the right of the nightstand
 		// dog will go at bottom, between dresser and desk
@@ -865,6 +885,7 @@ class Battle extends SceneLoader {
 	}
 
 	create() {
+		this.time += hoursToMinutes(HighTime);
 		this.disabledInputs = 0;
 		this.selectedOption = 0;
 		this.ignoreInput = false;
@@ -1037,9 +1058,27 @@ class Ending extends SceneLoader {
 		super("Ending");
 	}
 
+	init(data) {
+		this.won = data.won
+		this.energy = data.energy
+		this.time = data.time
+	}
+
 	create() {
+		let text = "";
+		if (this.won) {
+			text = "You made it to school on time after fully preparing!";
+		} else {
+			if (this.energy != false) {
+				text = "Oh no! You ran out of energy and fell back asleep!";
+			} else if (this.time != false) {
+				text = "Oh no! You ran out of time and were late!";
+			} else {
+				text = "Oh no! You ran out of energy or time!";
+			}
+		}
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
-		this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, "You made it to school on time after fully preparing!\n\nProgramming\nDave Markowitz\n\nArt\nAdrian Cheng\nEmily Wen\nMicah Kiang ", {
+		this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, text + "\n\nProgramming\nDave Markowitz\n\nArt\nAdrian Cheng\nEmily Wen\nMicah Kiang ", {
 			font: "75px Arial",
 			fill: "#FFFFFF",
 			stroke: "#000000",
