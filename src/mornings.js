@@ -478,7 +478,6 @@ class Overworld extends SceneLoader {
 			leftAction: "Pet dog",
 			rightAction: "Don't pet"
 		};
-
 	}
 
 	initializeBackpack(backpack) {
@@ -503,6 +502,23 @@ class Overworld extends SceneLoader {
 		};
 	}
 
+	initializeTaskBook(taskBook) {
+		taskBook.interactText = "It's a list of things you should do to get ready in the morning.\nHopefully you'll have enough energy today.";
+		taskBook.interactions = new Map();
+		taskBook.interactions.set(0,
+			{
+				description: "                    Wake up             Get changed                    \nTake medication           Pack for school\n      Leave by 1PM",
+				cost: {
+					energy: 0,
+					time: 0
+				}
+			});
+		taskBook.interactActions = {
+			leftAction: "Check tasks",
+			rightAction: "Leave"
+		};
+	}
+
 	create() {
 		// log the pointer position when it is in the game
 		this.input.on('pointerdown', (pointer) => {
@@ -516,7 +532,8 @@ class Overworld extends SceneLoader {
 			WaterCups: this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
 			Dog: this.physics.add.sprite(800, 900, "FrontIdle").setScale(2.0),
 			Backpack: this.physics.add.sprite(1150, 800, "FrontIdle").setScale(2.0),
-			Closet: this.physics.add.sprite(1100, 200, "FrontIdle").setScale(2.0)
+			Closet: this.physics.add.sprite(1100, 200, "FrontIdle").setScale(2.0),
+			TaskBook: this.physics.add.sprite(100, 700, "FrontIdle").setScale(1.5)
 		};
 		// lets put medicine on the dresser
 		// we'll put then water cups on the shelf to the right of the nightstand
@@ -527,6 +544,7 @@ class Overworld extends SceneLoader {
 		this.initializeDog(this.interactables.Dog);
 		this.initializeBackpack(this.interactables.Backpack);
 		this.initializeCloset(this.interactables.Closet);
+		this.initializeTaskBook(this.interactables.TaskBook);
 
 		this.registerInputHandlers();
 		this.maxVelocity = 300;
