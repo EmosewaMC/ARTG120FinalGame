@@ -182,7 +182,7 @@ class Overworld extends SceneLoader {
 				this.canReleaseText = false;
 				this.textActive = true;
 				this.interactedObject = interacting;
-				this.activeText = this.add.text(40, 900, interacting.interactText, {
+				this.activeText = this.add.text(40, 885, interacting.interactText, {
 					font: "50px Arial",
 					fill: "#FFFFFF",
 					stroke: "#000000",
@@ -240,10 +240,10 @@ class Overworld extends SceneLoader {
 					this.leftAction.setAlpha(1);
 					this.rightAction.setAlpha(0.5);
 				}
-			} else if (!(this.aKey.isDown || this.dKey.isDown || this.enterKey.isDown)) {
+			} else if (!(this.aKey.isDown || this.dKey.isDown || this.enterKey.isDown || this.fKey.isDown)) {
 				this.releasedKey = true;
 			}
-			if (this.enterKey.isDown && this.releasedKey) {
+			if ((this.enterKey.isDown || this.fKey.isDown) && this.releasedKey) {
 				this.releasedKey = false;
 				let selectedOption = this.usedTextItem % 2;
 				if (selectedOption == 0) {
@@ -274,7 +274,6 @@ class Overworld extends SceneLoader {
 							this.scene.activeText = undefined;
 						}
 						this.scene.disablePlayerMovement = false;
-						this.scene.canReleaseText = true;
 						this.scene.releasedKey = false;
 						this.scene.input.keyboard.removeAllListeners();
 					});
@@ -407,7 +406,7 @@ class Overworld extends SceneLoader {
 	}
 
 	initializeMedicine(medicine) {
-		medicine.interactText = "According to your therapist, these tiny pills are supposed to make you feel better.";
+		medicine.interactText = "According to your therapist, these tiny pills are supposed\nto make you feel better.";
 		medicine.interactions = new Map();
 		medicine.interactions.set(0,
 			{
