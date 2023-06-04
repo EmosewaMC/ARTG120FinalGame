@@ -34,6 +34,9 @@ class SceneLoader extends Phaser.Scene {
 		this.preloadImage("SideIdle");
 		this.preloadImage("Platform");
 		this.preloadImage("ProtagonistBattleSprite");
+		this.preloadImage("Sparkle");
+		this.preloadImage("Dog");
+		this.preloadImage("Phone");
 
 		// cache all animations
 		this.preloadAnimation("BackWalk1");
@@ -222,7 +225,7 @@ class Overworld extends SceneLoader {
 
 		let interacting = undefined;
 		for (let [objName, obj] of Object.entries(this.interactables)) {
-			if (this.physics.overlap(this.player, obj)) {
+			if (this.physics.overlap(this.player, obj) && obj.sparkles != undefined) {
 				interacting = objName;
 				break;
 			}
@@ -250,7 +253,7 @@ class Overworld extends SceneLoader {
 	runInteractables(time, delta) {
 		let interacting = undefined;
 		for (let [objName, obj] of Object.entries(this.interactables)) {
-			if (this.physics.overlap(this.player, obj)) {
+			if (this.physics.overlap(this.player, obj) && obj.sparkles != undefined) {
 				interacting = obj;
 				break;
 			}
@@ -347,7 +350,11 @@ class Overworld extends SceneLoader {
 							this.scene.rerenderEnergy();
 							this.scene.activeText.destroy();
 							this.scene.time += response.cost.time;
-
+							
+							if (this.scene.interactedObject.sparkles != undefined) {
+								this.scene.interactedObject.sparkles.destroy();
+								this.scene.interactedObject.sparkles = undefined;
+							}
 							this.scene.textActive = false;
 							this.scene.activeText = undefined;
 						}
@@ -448,7 +455,7 @@ class Overworld extends SceneLoader {
 	}
 
 	addPhysicsWall(x, y) {
-		let newPhysBounds = this.physics.add.sprite(x, y, "Platform").setScale(1.75).setImmovable(true).setAlpha(Debug);
+		let newPhysBounds = this.physics.add.sprite(x, y, "Platform").setScale(1.75).setImmovable(true).setAlpha(0);
 		// add a callback for when the object is clicked to output its position
 		newPhysBounds.setInteractive().on('pointerdown', () => {
 			console.log(newPhysBounds.x, newPhysBounds.y);
@@ -481,6 +488,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Check phone",
 			rightAction: "Put the phone down"
 		};
+		phone.sparkles = this.add.image(750, 220, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeMedicine(medicine) {
@@ -505,7 +513,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Take medication",
 			rightAction: "Skip for today"
 		};
-
+		medicine.sparkles = this.add.image(370, 350, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeWaterCups(waterCups) {
@@ -538,7 +546,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Drink from a cup",
 			rightAction: "Don't drink"
 		};
-
+		waterCups.sparkles = this.add.image(440, 925, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeDog(dog) {
@@ -556,6 +564,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Pet dog",
 			rightAction: "Don't pet"
 		};
+		dog.sparkles = this.add.image(800, 900, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeBackpack(backpack) {
@@ -567,6 +576,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Pack for school",
 			rightAction: "Leave it"
 		};
+		backpack.sparkles = this.add.image(1150, 800, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeCloset(closet) {
@@ -578,6 +588,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Get changed",
 			rightAction: "Stay in pajamas"
 		};
+		closet.sparkles = this.add.image(1100, 200, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	initializeTaskBook(taskBook) {
@@ -595,6 +606,7 @@ class Overworld extends SceneLoader {
 			leftAction: "Check tasks",
 			rightAction: "Leave"
 		};
+		taskBook.sparkles = this.add.image(100, 700, "Sparkle").setScale(0.1).setAlpha(0.7);
 	}
 
 	create() {
@@ -605,8 +617,8 @@ class Overworld extends SceneLoader {
 		this.background = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, "Opening").setScale(1.86);
 
 		this.interactables = {
-			Phone: this.physics.add.sprite(750, 210, "FrontIdle").setScale(0.5),
-			Medicine: this.physics.add.sprite(400, 350, "FrontIdle").setScale(0.5),
+			Phone: this.physics.add.sprite(750, 220, "Phone").setScale(1.5),
+			Medicine: this.physics.add.sprite(400, 350, "FrontIdle").setScale(0.5).setAlpha(0),
 			WaterCups: this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
 			Dog: this.physics.add.sprite(800, 900, "FrontIdle").setScale(2.0),
 			Backpack: this.physics.add.sprite(1150, 800, "FrontIdle").setScale(2.0),
