@@ -33,6 +33,7 @@ class SceneLoader extends Phaser.Scene {
 		this.preloadImage("PlayerSprite");
 		this.preloadImage("SideIdle");
 		this.preloadImage("Platform");
+		this.preloadImage("ProtagonistBattleSprite");
 
 		// cache all animations
 		this.preloadAnimation("BackWalk1");
@@ -221,8 +222,6 @@ class Overworld extends SceneLoader {
 				this.activeText = undefined;
 			}
 		}
-
-
 	}
 
 	runInput(time, delta) {
@@ -251,8 +250,9 @@ class Overworld extends SceneLoader {
 					// log the length of the interactions
 					let length = this.interactedObject.interactions.size;
 					let response = this.interactedObject.interactions.get(Math.round(Seed * length) % length);
-					if (response == "StartBattle") {
+					if (this.interactedObject.interactions.get(0) == "StartBattle") {
 						this.scene.start("Battle", {
+							battle: this.interactedObject.interactions.get(1),
 							energy: this.playerEnergy,
 							time: this.time,
 						});
@@ -486,6 +486,7 @@ class Overworld extends SceneLoader {
 		backpack.interactText = "Inside are miscellaneous papers, but you also need your laptop for class.";
 		backpack.interactions = new Map();
 		backpack.interactions.set(0, "StartBattle");
+		backpack.interactions.set(1, "Backpack");
 		backpack.interactActions = {
 			leftAction: "Pack for school",
 			rightAction: "Leave it"
@@ -496,6 +497,7 @@ class Overworld extends SceneLoader {
 		closet.interactText = "Maybe today you won't wear pajamas to class.";
 		closet.interactions = new Map();
 		closet.interactions.set(0, "StartBattle");
+		closet.interactions.set(1, "Closet");
 		closet.interactActions = {
 			leftAction: "Get changed",
 			rightAction: "Stay in pajamas"
@@ -514,7 +516,7 @@ class Overworld extends SceneLoader {
 			Medicine: this.physics.add.sprite(400, 350, "FrontIdle").setScale(0.5),
 			WaterCups: this.physics.add.sprite(440, 925, "FrontIdle").setScale(1.5),
 			Dog: this.physics.add.sprite(800, 900, "FrontIdle").setScale(2.0),
-			Backpack: this.physics.add.sprite(1200, 700, "FrontIdle").setScale(2.0),
+			Backpack: this.physics.add.sprite(1150, 800, "FrontIdle").setScale(2.0),
 			Closet: this.physics.add.sprite(1100, 200, "FrontIdle").setScale(2.0)
 		};
 		// lets put medicine on the dresser
@@ -585,6 +587,7 @@ class Battle extends SceneLoader {
 	}
 
 	init(data) {
+		this.battleType = data.battle;
 		this.playerEnergy = data.energy;
 		this.time = data.time;
 	}
@@ -597,12 +600,12 @@ class Battle extends SceneLoader {
 			stroke: "#000000",
 			strokeThickness: 5
 		});
-		this.topRightGoon = this.physics.add.sprite(this.cameras.main.centerX + 200, this.cameras.main.centerY - 200, "Player")
+		this.topRightGoon = this.physics.add.sprite(this.cameras.main.centerX + 200, this.cameras.main.centerY - 200, "ProtagonistBattleSprite")
 			.setImmovable(true)
 			.setScale(2.5)
 			.setFlipX(true);
 
-		this.middleLeftGoon = this.physics.add.sprite(this.cameras.main.centerX - 400, this.cameras.main.centerY + 100, "Player")
+		this.middleLeftGoon = this.physics.add.sprite(this.cameras.main.centerX - 400, this.cameras.main.centerY + 100, "ProtagonistBattleSprite")
 			.setImmovable(true)
 			.setScale(2.5);
 
