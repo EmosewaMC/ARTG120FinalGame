@@ -1030,27 +1030,25 @@ class Battle extends SceneLoader {
 				this.rerenderEnergy();
 				this.battleOptions[selectedOption].disabled = true;
 				this.disabledInputs++;
-				if (this.disabledInputs >= this.battleOptions.length) {
-					this.battleOptionsText.forEach((option, index) => {
-						option.setAlpha(0);
+				this.battleOptionsText.forEach((option, index) => {
+					option.setAlpha(0);
+				});
+				this.ignoreInput = true;
+				this.battleOptionsText.push(this.add.text(540, 925, "Battle won!", {
+					font: "75px Arial",
+					fill: "#FFFFFF",
+					stroke: "#000000",
+					strokeThickness: 5
+				}).setAlpha(0.55));
+				// when the f key is pressed start the overworld
+				this.fKey.on("down", () => {
+					this.scene.start("Overworld", {
+						energy: this.playerEnergy,
+						time: this.time,
+						playerX: this.playerX,
+						playerY: this.playerY,
 					});
-					this.ignoreInput = true;
-					this.battleOptionsText.push(this.add.text(540, 925, "Battle won!", {
-						font: "75px Arial",
-						fill: "#FFFFFF",
-						stroke: "#000000",
-						strokeThickness: 5
-					}).setAlpha(0.55));
-					// when the f key is pressed start the overworld
-					this.fKey.on("down", () => {
-						this.scene.start("Overworld", {
-							energy: this.playerEnergy,
-							time: this.time,
-							playerX: this.playerX,
-							playerY: this.playerY,
-						});
-					});
-				}
+				});
 			});
 		}
 	}
