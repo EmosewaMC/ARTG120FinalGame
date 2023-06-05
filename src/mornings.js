@@ -128,7 +128,7 @@ class Sleeping extends SceneLoader {
 
 	create() {
 		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 975, 1390, 200, 0x000000, 0.5).setStrokeStyle(5, 0xFFFFFF, 1).setAlpha(1);
-		this.activeText = this.add.text(40, 500, "You stayed up late last night watching random Yootoob videos and now you can barely open your eyes. You remember writing a list of things to do before you go to class… If you want to get to class on time, or even at all, you should get up now.", {
+		this.activeText = this.add.text(40, 500, "You stayed up late last night watching random Yootoob videos and now you can barely open your eyes. You remember writing a list of things to do before you go to class… If you want to get to class on time, or even at all, you should get up now.\nPress F to select an option and A or D to go between options.", {
 			font: "40px Arial",
 			fill: "#FFFFFF",
 			stroke: "#000000",
