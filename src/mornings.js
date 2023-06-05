@@ -893,6 +893,7 @@ class Battle extends SceneLoader {
 		this.selectedOption = 0;
 		this.ignoreInput = false;
 		this.releasedKey = true;
+		this.textIndex = 0;
 		this.getBattleData();
 		this.registerInputHandlers();
 		this.rerenderEnergy();
@@ -910,78 +911,27 @@ class Battle extends SceneLoader {
 		this.moveBox = this.add.rectangle(this.cameras.main.centerX, 925, 1390, 300, 0x000000, 0.75)
 			.setStrokeStyle(5, 0xffffff, 1);
 
-		// create the text for the battle options
-		this.battlePrompt = this.add.text(50, 800, "Choose an action", {
+		this.battleText = this.add.text(50, 850, "Time to get ready!", {
 			font: "50px Arial",
 			fill: "#ffffff",
 			stroke: "#000000",
-			strokeThickness: 5
-		}).setWordWrapWidth(1300, true);
-		// there will only be a max of 6 options so imma hard code it
-		this.battleOptionsText = [];
-		this.battleOptionsText.push(this.add.text(50, 900, this.battleOptions[0].name, {
-			font: "50px Arial",
-			fill: "#ffffff",
-			stroke: "#000000",
-			strokeThickness: 5
-		}));
-		this.battleOptionsText.push(this.add.text(445, 900, this.battleOptions[1].name, {
-			font: "50px Arial",
-			fill: "#ffffff",
-			stroke: "#000000",
-			strokeThickness: 5
-		}));
-		this.battleOptionsText.push(this.add.text(950, 900, this.battleOptions[2].name, {
-			font: "50px Arial",
-			fill: "#ffffff",
-			stroke: "#000000",
-			strokeThickness: 5
-		}));
-		if (this.battleOptions.length >= 4) {
-			this.battleOptionsText.push(this.add.text(50, 1000, this.battleOptions[3].name, {
-				font: "50px Arial",
-				fill: "#ffffff",
-				stroke: "#000000",
-				strokeThickness: 5
-			}));
-			this.battleOptionsText.push(this.add.text(425, 1000, this.battleOptions[4].name, {
-				font: "50px Arial",
-				fill: "#ffffff",
-				stroke: "#000000",
-				strokeThickness: 5
-			}));
-			this.battleOptionsText.push(this.add.text(800, 1000, this.battleOptions[5].name, {
-				font: "50px Arial",
-				fill: "#ffffff",
-				stroke: "#000000",
-				strokeThickness: 5
-			}));
-		}
-		this.wKey.on("down", () => {
-			if (this.ignoreInput || this.battleOptions.length < 2) return;
-			this.selectedOption += 3;
-		});
-		this.sKey.on("down", () => {
-			if (this.ignoreInput || this.battleOptions.length < 2) return;
-			this.selectedOption -= 3;
-		});
-		this.aKey.on("down", () => {
-			if (this.ignoreInput || this.battleOptions.length < 2) return;
-			this.selectedOption--;
-			this.verifyOptionBounds();
-			while (this.battleOptions[this.selectedOption % this.battleOptions.length].disabled) {
-				this.selectedOption--;
-				this.verifyOptionBounds();
+			strokeThickness: 5,
+			align: "center"
+		}).setWordWrapWidth(1300);
+		this.fKey.on("down", () => {
+			if (this.textIndex >= this.battleOptions.length) {
+				this.scene.start("Overworld", {
+					energy: this.playerEnergy,
+					time: this.time,
+					playerX: this.playerX,
+					playerY: this.playerY
+				});
+				return;
 			}
-		});
-		this.dKey.on("down", () => {
-			if (this.ignoreInput || this.battleOptions.length < 2) return;
-			this.selectedOption++;
-			this.verifyOptionBounds();
-			while (this.battleOptions[this.selectedOption % this.battleOptions.length].disabled) {
-				this.selectedOption++;
-				this.verifyOptionBounds();
-			}
+			this.battleText.setText(this.battleOptions[this.textIndex].description);
+			this.playerEnergy -= this.battleOptions[this.textIndex].energy;
+			this.rerenderEnergy();
+			this.textIndex++;
 		});
 	}
 
@@ -991,65 +941,6 @@ class Battle extends SceneLoader {
 		}
 		if (this.selectedOption >= this.battleOptions.length) {
 			this.selectedOption -= this.battleOptions.length;
-		}
-	}
-
-	update(time, delta) {
-		if (this.fKey.isUp) this.releasedKey = true;
-		if (this.ignoreInput) return;
-		this.verifyOptionBounds();
-		let selectedOption = this.selectedOption % this.battleOptions.length;
-		if (this.battleOptions.length > 1) {
-			while (this.battleOptions[selectedOption].disabled) {
-				this.selectedOption++;
-				selectedOption = this.selectedOption % this.battleOptions.length;
-			}
-		}
-		this.battleOptionsText.forEach((option, index) => {
-			if (index == selectedOption) {
-				option.setAlpha(0.55);
-			} else if (!this.battleOptions[index].disabled) {
-				option.setAlpha(1);
-			} else {
-				option.setAlpha(0);
-			}
-		});
-		if (this.fKey.isDown && this.releasedKey) {
-			this.releasedKey = false;
-			this.playerEnergy -= this.battleOptions[selectedOption].energy;
-			this.battlePrompt.setText(this.battleOptions[selectedOption].description);
-			this.ignoreInput = true;
-			this.battleOptionsText.forEach((option, index) => {
-				option.setAlpha(0);
-			});
-			this.fKey.on("up", () => {
-				if (!this.releasedKey) return;
-				this.battlePrompt.setText("Choose an action");
-				this.fKey.removeAllListeners();
-				this.ignoreInput = false;
-				this.rerenderEnergy();
-				this.battleOptions[selectedOption].disabled = true;
-				this.disabledInputs++;
-				this.battleOptionsText.forEach((option, index) => {
-					option.setAlpha(0);
-				});
-				this.ignoreInput = true;
-				this.battleOptionsText.push(this.add.text(540, 925, "Battle won!", {
-					font: "75px Arial",
-					fill: "#FFFFFF",
-					stroke: "#000000",
-					strokeThickness: 5
-				}).setAlpha(0.55));
-				// when the f key is pressed start the overworld
-				this.fKey.on("down", () => {
-					this.scene.start("Overworld", {
-						energy: this.playerEnergy,
-						time: this.time,
-						playerX: this.playerX,
-						playerY: this.playerY,
-					});
-				});
-			});
 		}
 	}
 }
